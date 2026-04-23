@@ -1,7 +1,17 @@
-class Servico:
-    def __init__(self, nome, preco):
-        self._nome  = nome
-        self._preco = preco
+from pydantic import BaseModel
 
-    def __str__(self):
-        return f"Peça: {self._nome}, Preço {self._preco}"
+class ServicoSchema(BaseModel):
+    nome: str
+    preco: float
+    descricao: str
+
+class ServicoResponse(BaseModel):
+    id   : int
+    nome : str
+    preco: float
+
+    class Config:
+        from_attributes = True
+
+# Posso adicionar outro Response detalhado
+# EX: Calculo total dentro do Schema do OS
