@@ -1,6 +1,7 @@
-import re
+from app.repositories import clientes
+from fastapi import HTTPException
+from app.repositories import veiculos
 
-# Func que valida CPF
 def validar_cpf(cpf):
     cpf = ''.join(filter(str.isdigit, cpf))
 
@@ -31,6 +32,59 @@ def validar_cpf(cpf):
     print("> CPF Válido!")
     return True
 
-# Func que valida CNPJ
+def cliente_existe(cpf, db):
+    return clientes.get_specific_client(cpf, db) is not None
 
-# Func que valida se o Cliente ja esta cadastrado
+def cadastrar_cliente(cliente, db):
+    if cliente_existe(cliente.cpf, db):
+        raise HTTPException(status_code=409, detail="CPF Encontrado no sistema, tente novamente.")
+    
+    if not validar_cpf(cliente.cpf):
+        raise HTTPException(status_code=422, detail="CPF inválido")
+    
+    result = clientes.add_client(cliente, db)
+    return result
+
+def listar_clientes(db):
+    return clientes.get_all_clients(db)
+
+def listar_veiculos_cliente(cpf, db):
+    cliente_veiculos = clientes.get_client_veichles(cpf, db) or None
+
+    if not cliente_existe(cpf, db):
+        raise HTTPException(status_code=404, detail="Cliente com esse CPF não encontrado")
+    
+    if not cliente_veiculos:
+        raise HTTPException(status_code=404, detail="Cliente não tem veículos cadastrados")
+    
+    return cliente_veiculos
+
+def remover_cliente(cpf, db):
+    if not cliente_existe(cpf, db):
+        raise HTTPException(status_code=404, detail="Cliente com esse CPF não encontrado")
+    
+    return clientes.delete_client(cpf, db)
+
+def transferir_veiculo_cliente(placa, novo_cpf, db):
+    if not cliente_existe(novo_cpf, db):
+        raise HTTPException(status_code=404, detail="Cliente com esse CPF não encontrado")
+
+    novo_cliente = clientes.get_specific_client(novo_cpf, db)
+    veiculo      = veiculos.get_vehicle(placa, db)
+
+    veiculo_transferido = clientes.transfer_client_vehicle(veiculo, novo_cliente, db)
+    return veiculo_transferido
+
+def atualizar_informacao_cliente(cpf, dados, db):
+    if not cliente_existe(cpf, db):
+        raise HTTPException(status_code=404, detail="Cliente com esse CPF não encontrado")
+
+    cliente = clientes.get_specific_client(cpf, db)
+    dados_atualizados = clientes.update_client_infos(cliente, dados, db)
+    return dados_atualizados
+
+def consultar_cliente(cpf, db):
+    if not cliente_existe(cpf, db):
+        raise HTTPException(status_code=404, detail="Cliente com esse CPF não encontrado")
+    
+    return clientes.get_specific_client(cpf, db)
