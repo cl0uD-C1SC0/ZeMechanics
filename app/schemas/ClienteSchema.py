@@ -1,27 +1,33 @@
-
-
-"""
-Antes a minha classe ficava assim
-"""
-
-# class Cliente:
-#     def __init__(self, nome, contato, endereco, cpf):
-#         self._nome     = nome
-#         self._contato  = contato
-#         self._endereco = endereco
-#         self._cpf      = cpf
-
-
-#     def __str__(self):
-#         return f"Cliente: {self._nome}, {self._cpf}, {self._endereco}"
-
-"""
-Com o uso do pydantic, ele valida a entrada e retorna o JSON:
-"""
 from pydantic import BaseModel
+from app.schemas.VeiculoSchema import ConsultClientVeiculoResponse
+from typing import Optional
 
 class ClienteSchema(BaseModel):
     nome: str
     cpf: str
     endereco: str
     contato: str
+
+class ClienteUpdateSchema(BaseModel):
+    nome: Optional[str] = None
+    endereco: Optional[str] = None
+    contato: Optional[str] = None
+
+
+class AddClientResponse(BaseModel):
+    id: int
+    nome: str
+    message: str
+    
+    class Config:
+        from_attributes = True
+class ConsultClientResponse(BaseModel):
+    id: int
+    nome: str
+    cpf: str
+    contato: str
+    endereco: str
+    veiculos: list[ConsultClientVeiculoResponse]
+
+    class Config:
+        from_attributes = True
