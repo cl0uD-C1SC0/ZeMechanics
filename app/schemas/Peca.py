@@ -1,17 +1,15 @@
+from pydantic import BaseModel
 
+class PecaSchema(BaseModel):
+    nome: str
+    preco: float
+    quantidade: int
 
-class Peca:
-    def __init__(self, nome, preco):
-        self._nome  = nome
-        self._preco = preco
+class PecaResponse(BaseModel):
+    id   : int
+    nome : str
+    preco: float
+    quantidade: int
 
-    @property
-    def nome(self):
-        return self._nome
-
-    @property
-    def preco(self):
-        return self._preco
-
-    def __str__(self):
-        return f"Peça {self._nome}, Preço {self._preco}"
+    class Config:
+        from_attributes = True
