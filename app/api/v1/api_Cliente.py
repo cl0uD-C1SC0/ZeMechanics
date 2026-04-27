@@ -13,14 +13,14 @@ def cadastrar_cliente(cliente: ClienteSchema, db: Session = Depends(get_db)):
     novo_cliente = cliente_service.cadastrar_cliente(cliente, db)
     return {"id": novo_cliente.id, "nome": novo_cliente.nome, "message": "Cliente adicionado"}
 
-@router.get("/listar_clientes", summary="Listar todos os clientes cadastrados", description="Lista todas as informações, incluindo o ID dos clientes")
+@router.get("/clientes", summary="Listar todos os clientes cadastrados", description="Lista todas as informações, incluindo o ID dos clientes")
 def listar_clientes(db: Session = Depends(get_db)):
     clientes = cliente_service.listar_clientes(db)
     if clientes:
         return clientes
     raise HTTPException(status_code=404, detail="> Não foi possível listar os clientes")
 
-@router.get("/{cpf}", response_model=ConsultClientResponse, summary="Consultar um cliente específico", description="Consultar todos os dados de um cliente com base em um CPF")
+@router.get("/consultar_cliente/{cpf}", response_model=ConsultClientResponse, summary="Consultar um cliente específico", description="Consultar todos os dados de um cliente com base em um CPF")
 def consultar_cliente(cpf: int, db: Session = Depends(get_db)):
     cliente = cliente_service.consultar_cliente(cpf, db)    
     return cliente
