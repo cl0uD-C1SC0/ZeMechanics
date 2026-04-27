@@ -12,12 +12,12 @@ def cadastrar_veiculo(veiculo: VeiculoSchema, db: Session = Depends(get_db)):
     veiculo = veiculo_service.cadastrar_veiculo(veiculo, db)
     return veiculo
 
-@router.get("/consultar_placa")
+@router.get("/consultar_placa/{placa}")
 def consultar_placa(placa: str, db: Session = Depends(get_db)):
     veiculo_consultado = veiculo_service.consultar_veiculo(placa, db)
     return veiculo_consultado
 
-@router.get("/listar_veiculos", summary="Lista todos os veiculos cadastrados & seus donos")
+@router.get("/veiculos", summary="Lista todos os veiculos cadastrados & seus donos")
 def listar_veiculos(db: Session = Depends(get_db)):
     veiculos = veiculo_service.listar_todos_veiculos(db)
     return veiculos
