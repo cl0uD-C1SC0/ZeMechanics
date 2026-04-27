@@ -22,12 +22,12 @@ def delete_vehicle(veiculo_placa, db):
     veiculo = db.query(VeiculoModel).filter(VeiculoModel.placa == veiculo_placa).first()
 
     if not veiculo:
-        raise HTTPException(status_code=404, detail="Veículo não encontrado")
+        raise HTTPException(status_code=404, detail="Veículo com essa placa não encontrado")
 
     db.delete(veiculo)
     db.commit()
 
-    return {"message": "Veículo removido. Necessário cadastrar novamente"}
+    return {"message": "Veículo removido com sucesso"}
 
 def update_vehicle_info(veiculo, dados, db):
     for campo, valor in dados.model_dump(exclude_none=True).items():
