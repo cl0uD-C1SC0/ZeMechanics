@@ -1,6 +1,4 @@
-# from app.repositories.veiculos import get_vehicle, add_veiculo
 from app.repositories import veiculos
-from app.repositories import clientes
 from fastapi import HTTPException
 
 def consultar_veiculo(placa, db):
