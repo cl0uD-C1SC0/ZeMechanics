@@ -7,8 +7,7 @@ def add_mechanic_service(service, db):
     novo_servico = ServicoModel(
         nome = service.nome,
         preco = service.preco,
-        descricao = service.descricao,
-        quantidade = service.quantidade
+        descricao = service.descricao
     )
     db.add(novo_servico)
     db.commit()
