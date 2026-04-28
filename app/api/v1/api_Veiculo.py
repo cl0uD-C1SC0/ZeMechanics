@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status, Depends
 from sqlalchemy.orm import Session
 
-from app.services import svc_Veiculo as veiculo_service
+from app.services import VeiculoService as veiculo_service
 from app.database import get_db
 from app.schemas.VeiculoSchema import VeiculoSchema, UpdateVehicleSchema, AddVehicleReponse
 
