@@ -10,14 +10,14 @@ def listar_todos_servicos(db):
 def consultar_servico_especifico(servico_id, db):
     servico = ServicosRepository.describe_service(servico_id, db)
     if not servico:
-        raise HTTPException(status_code=404, detail="Serviço não encontrado")
+        raise HTTPException(status_code=404, detail=f"Serviço com o ID: {servico_id} não foi encontrado no sistema")
     return servico 
 
 def atualizar_servico_especifico(servico_id, dados, db):
     servico = consultar_servico_especifico(servico_id, db)
 
     if not servico:
-        raise HTTPException(status_code=404, detail="Serviço com esse ID não encontrado")
+        raise HTTPException(status_code=404, detail=f"Serviço com o ID: {servico_id} não foi encontrado no sistema")
     
     servico_atualizado = ServicosRepository.update_service(servico, dados, db)
     return servico_atualizado
