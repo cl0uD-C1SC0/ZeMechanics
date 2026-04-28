@@ -9,7 +9,6 @@ class UpdateServiceSchema(BaseModel):
     nome: Optional[str] = None
     preco: Optional[str] = None
     descricao: Optional[str] = None
-    quantidade: Optional[str] = None
 
 class ServicoResponse(BaseModel):
     id   : int
@@ -17,6 +16,3 @@ class ServicoResponse(BaseModel):
     preco: float
     class Config:
         from_attributes = True
-
-# Posso adicionar outro Response detalhado
-# EX: Calculo total dentro do Schema do OS
