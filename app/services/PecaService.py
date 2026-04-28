@@ -10,7 +10,7 @@ def listar_todas_pecas(db):
 def consultar_peca_especifica(peca_id, db):
     peca = PecaRepository.describe_peca(peca_id, db)
     if not peca:
-        raise HTTPException(status_code=404, detail="Serviço não encontrado")
+        raise HTTPException(status_code=404, detail=f"Peça com o ID: {peca_id} não foi encontrada no sistema")
     return peca 
 
 def atualizar_peca_especifica(peca_id, dados, db):
