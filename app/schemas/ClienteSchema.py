@@ -6,28 +6,33 @@ class ClienteSchema(BaseModel):
     nome: str
     cpf: str
     endereco: str
-    contato: str
+    telefone: str
+    email: str
 
 class ClienteUpdateSchema(BaseModel):
     nome: Optional[str] = None
     endereco: Optional[str] = None
-    contato: Optional[str] = None
-
-
-class AddClientResponse(BaseModel):
-    id: int
-    nome: str
-    message: str
-    
-    class Config:
-        from_attributes = True
+    telefone: Optional[str] = None
+    email: Optional[str] = None 
 class ConsultClientResponse(BaseModel):
     id: int
     nome: str
     cpf: str
-    contato: str
+    telefone: str
+    email: str
     endereco: str
     veiculos: list[ConsultClientVeiculoResponse]
+
+    class Config:
+        from_attributes = True
+
+class ConsultAllClientsResponse(BaseModel):
+    id: int
+    nome: str
+    cpf: str
+    endereco: str
+    telefone: str
+    email: str
 
     class Config:
         from_attributes = True
