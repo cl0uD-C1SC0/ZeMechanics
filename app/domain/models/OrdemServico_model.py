@@ -1,22 +1,25 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from app.database import Base
-from app.domain.enums.status_os import StatusOS
+from app.domain.enums.StatusOS import StatusOS
 from datetime import datetime
 
 class OrdemDeServico(Base):
     __tablename__ = "ordens_de_servico"
 
-    id         = Column(Integer, primary_key=True, index=True)
-    status     = Column(String(50), default=StatusOS.RECEBIDA)
-    criado_em  = Column(DateTime, default=datetime.utcnow)
-    cliente_id = Column(Integer, ForeignKey("clientes.id"))
-    veiculo_id = Column(Integer, ForeignKey("veiculos.id"))
+    id            = Column(Integer, primary_key=True, index=True)
+    status        = Column(String(50), default=StatusOS.RECEBIDA)
+    criado_em     = Column(DateTime, default=datetime.utcnow)
+    iniciado_em   = Column(DateTime, nullable=True)   
+    finalizado_em = Column(DateTime, nullable=True)   
+    entregue_em   = Column(DateTime, nullable=True)
+    cliente_id    = Column(Integer, ForeignKey("clientes.id"))
+    veiculo_id    = Column(Integer, ForeignKey("veiculos.id"))
 
     cliente  = relationship("Cliente", back_populates="ordens")
     veiculo  = relationship("Veiculo", back_populates="ordens")
     pecas    = relationship("Peca", secondary="os_pecas", backref="ordens")
-    servicos = relationship("Servicos", secondary="os_servicos", backref="ordens") #
+    servicos = relationship("Servicos", secondary="os_servicos", backref="ordens")
 
 
 class OSPeca(Base):
