@@ -4,7 +4,7 @@ from app.database import Base, engine
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
 
-from app.domain.models.Cliente_model import Cliente
+from app.domain.models.cliente_model import Cliente
 from app.domain.models.Veiculo_model import Veiculo
 from app.domain.models.Peca_model import Peca
 from app.domain.models.Servico_model import Servicos
