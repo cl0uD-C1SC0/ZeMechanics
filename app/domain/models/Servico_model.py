@@ -8,4 +8,3 @@ class Servicos(Base):
     nome        = Column(String(200), nullable=False)
     descricao   = Column(String(200), nullable=True)
     preco       = Column(Float, nullable=False)
-    quantidade  = Column(Integer, default=0)
