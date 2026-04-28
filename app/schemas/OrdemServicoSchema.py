@@ -1,13 +1,41 @@
 from pydantic import BaseModel
-from app.domain.enums.status_os import StatusOS
+from app.domain.enums.StatusOS import StatusOS
+from typing import Optional
+from datetime import datetime
 
 class OrdemDeServicoSchema(BaseModel):
     cliente_cpf: int
     veiculo_placa: str
     peca_ids     : list[int]
     servico_ids  : list[int]
-    status_os: StatusOS = StatusOS.RECEBIDA
 
+class OSUpdateSchema(BaseModel):
+    cliente_cpf: Optional[int] = None
+    veiculo_placa: Optional[str] = None
+
+class ClienteResumo(BaseModel):
+    id: int
+    nome: str
+    cpf: str
+    class Config:
+        from_attributes = True
+class VeiculoResumo(BaseModel):
+    id: int
+    marca: str
+    modelo: str
+    placa: str
+    
+    class Config:
+        from_attributes = True
+class OSResponse(BaseModel):
+    id: int
+    status: str
+    criado_em: datetime
+    cliente: ClienteResumo
+    veiculo: VeiculoResumo
+
+    class Config:
+        from_attributes = True
 
 #     def calcular_total(self):
 #         total_servicos = sum(s._preco for s in self._servicos)
