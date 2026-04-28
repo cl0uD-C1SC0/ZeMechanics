@@ -12,6 +12,12 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+  maildev:
+    image: maildev/maildev
+    ports:
+      - "1025:1025" 
+      - "1080:1080" 
+    restart: always
 
   # api:
   #   build: .
