@@ -1,4 +1,4 @@
-from app.schemas.ClienteSchema import ClienteSchema
+from app.schemas.cliente_schema import ClienteSchema
 from app.schemas.VeiculoSchema import VeiculoSchema
 from app.schemas.Peca import PecaSchema, PecaResponse
 from app.schemas.Servico import ServicoSchema, ServicoResponse
