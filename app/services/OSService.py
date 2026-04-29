@@ -2,9 +2,12 @@ from app.repositories import OSRepository
 from fastapi import HTTPException
 
 from app.services import cliente_service as cliente_service
-from app.services import PecaService as peca_service
-from app.services import ServicosService as servico_service
-from app.services import VeiculoService as veiculo_service
+from app.services import peca_service as peca_service
+from app.services import servico_service as servico_service
+from app.services import veiculo_service as veiculo_service
+
+from app.repositories import PecaRepository
+from app.repositories import ServicosRepository
 
 from app.domain.enums.StatusOS import StatusOS
 from app.domain.enums.StatusOS import TRANSICAO_STATUS
@@ -19,15 +22,6 @@ def criar_nova_os(os, db):
 
     if not veiculo:
         raise HTTPException(404, "Veículo não encontrado!")
-
-    for peca_id in os.peca_ids:
-
-        if not peca_service.consultar_peca_especifica(peca_id, db):
-            raise HTTPException(404, f"A peça com ID: {peca_id} não foi encontrada no sistema")
-        
-    for servico_id in os.servico_ids:
-        if not servico_service.consultar_servico_especifico(servico_id, db):
-            raise HTTPException(404, f"O Serviço com ID: {servico_id} não foi encontrada no sistema")
 
     nova_os = OSRepository.create_new_os(cliente, veiculo, db)
 
@@ -73,11 +67,29 @@ def consultar_os(os_id, db):
 
     if not os_consultada:
         raise HTTPException(status_code=404, detail="OS não encontrada")
-    
-    return {"OS ID": os_consultada.id, "Status atual": os_consultada.status, "CPF": os_consultada.cliente.cpf} 
+
+    total_pecas    = sum(p.preco for p in os_consultada.pecas)
+    total_servicos = sum(s.preco for s in os_consultada.servicos)
+    total          = total_pecas + total_servicos    
+
+    return {
+        "OS ID": os_consultada.id,
+        "Status atual": os_consultada.status,
+        "CPF": os_consultada.cliente.cpf,
+        "Veículo": os_consultada.veiculo.placa,
+        "Peças": [
+            {"nome": peca_add.peca.nome, "quantidade": peca_add.quantidade, "valor": peca_add.peca.preco}
+            for peca_add in os_consultada.os_pecas
+        ],
+        "Serviços": [
+            {"nome": service_add.nome, "valor": service_add.preco}
+            for service_add in os_consultada.servicos
+        ],
+        "Total": round(total, 2)
+    }
 
 def avancar_os(os_id, db):
-    os = consultar_os(os_id, db)
+    os = OSRepository.get_specific_os(os_id, db)
     
     if not os:
         raise HTTPException(status_code=404, detail="OS não encontrada")
@@ -105,3 +117,58 @@ def aprovar_os(os_id, cliente_cpf, db):
         raise HTTPException(status_code=403, detail="CPF não autorizado")
 
     return OSRepository.approve_os(os, db)
+
+def adicionar_peca_os(os_id, peca_id, quantidade, db):
+    os = OSRepository.get_specific_os(os_id, db)
+    if not os:
+        raise HTTPException(status_code=404, detail="OS não encontrada")
+
+    peca = PecaRepository.describe_peca(peca_id, db)
+    if not peca:
+        raise HTTPException(status_code=404, detail="Peça não encontrada")
+
+    if peca.quantidade < quantidade:
+        raise HTTPException(status_code=400, detail=f"Estoque insuficiente — disponível: {peca.quantidade}")
+
+    peca_service.remover_do_estoque(peca_id, quantidade, db)
+
+    resultado = OSRepository.add_os_peca(os_id, peca_id, quantidade, db)
+    return {"message": f"{quantidade}x {peca.nome} adicionada à OS {os_id}"}
+
+def remover_peca_os(os_id, peca_id, db):
+    os = OSRepository.get_specific_os(os_id, db)
+    if not os:
+        raise HTTPException(status_code=404, detail="OS não encontrada")
+
+    os_peca = OSRepository.get_peca_da_os(os_id, peca_id, db)
+    if not os_peca:
+        raise HTTPException(status_code=404, detail="Peça não encontrada na OS")
+
+    peca_service.adicionar_ao_estoque(peca_id, os_peca.quantidade, db)
+
+    OSRepository.remove_os_peca(os_id, peca_id, db)
+    return {"message": f"Peça removida da OS {os_id} e quantidade devolvida ao estoque"}
+
+def adicionar_servico_os(os_id, servico_id, db):
+    os = OSRepository.get_specific_os(os_id, db)
+    if not os:
+        raise HTTPException(status_code=404, detail="OS não encontrada")
+
+    servico = ServicosRepository.describe_service(servico_id, db)
+    if not servico:
+        raise HTTPException(status_code=404, detail="Serviço não encontrado")
+
+    resultado = OSRepository.add_service_os(os_id, servico_id, db)
+    return {"message": f"{servico.nome} adicionado à OS {os_id}"}
+
+def remover_servico_os(os_id, servico_id, db):
+    os = OSRepository.get_specific_os(os_id, db)
+    if not os:
+        raise HTTPException(status_code=404, detail="OS não encontrada")
+
+    os_servico = OSRepository.get_os_service(os_id, servico_id, db)
+    if not os_servico:
+        raise HTTPException(status_code=404, detail="Serviço não encontrado na OS")
+
+    OSRepository.remove_service_os(os_id, servico_id, db)
+    return {"message": f"Serviço removido da OS {os_id}"}
