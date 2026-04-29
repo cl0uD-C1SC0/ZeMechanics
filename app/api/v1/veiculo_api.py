@@ -1,0 +1,35 @@
+from fastapi import APIRouter, status, Depends
+from sqlalchemy.orm import Session
+from typing import Annotated
+
+from app.services import veiculo_service
+from app.database import get_db
+from app.schemas.VeiculoSchema import VeiculoSchema, UpdateVehicleSchema
+
+router = APIRouter(prefix="/veiculo", tags=["Veiculos v1"])
+DB = Annotated[Session, Depends(get_db)]
+
+@router.post("/cadastrar_veiculo", status_code=status.HTTP_201_CREATED)
+def cadastrar_veiculo(veiculo: VeiculoSchema, db: DB):
+    veiculo = veiculo_service.cadastrar_veiculo(veiculo, db)
+    return veiculo
+
+@router.get("/consultar_placa/{placa}")
+def consultar_placa(placa: str, db: DB):
+    veiculo_consultado = veiculo_service.consultar_veiculo(placa, db)
+    return veiculo_consultado
+
+@router.get("/veiculos", summary="Lista todos os veiculos cadastrados & seus donos")
+def listar_veiculos(db: DB):
+    veiculos = veiculo_service.listar_todos_veiculos(db)
+    return veiculos
+
+@router.patch("/atualizar_veiculo/{placa}")
+def atualizar_veiculo(placa: str, dados: UpdateVehicleSchema, db: DB):
+    veiculo_atualizado = veiculo_service.atualizar_dados_veiculo(placa, dados, db)
+    return veiculo_atualizado
+
+@router.delete("/remover_veiculo/{veiculo_placa}", summary="Excluir um veículo")
+def remover_veiculo_cliente(veiculo_placa: str, db: DB):
+    veiculo_removido = veiculo_service.remover_veiculo(veiculo_placa, db)
+    return veiculo_removido
