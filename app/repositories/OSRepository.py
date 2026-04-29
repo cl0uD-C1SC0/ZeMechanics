@@ -1,7 +1,6 @@
-from fastapi import HTTPException
-from app.domain.models.cliente_model import Cliente as ClienteModel
-from app.domain.models.Veiculo_model import Veiculo as VeiculoModel
 from app.domain.models.OrdemServico_model import OrdemDeServico as OSModel
+from app.domain.models.OrdemServico_model import OSPeca as OSPecaModel
+from app.domain.models.OrdemServico_model import OSServico as OSServicoModel
 
 from app.domain.enums.StatusOS import StatusOS
 from datetime import datetime
@@ -65,3 +64,49 @@ def approve_os(os, db):
     db.refresh(os)
 
     return {"message": "OS Aprovada com sucesso, agora será executada"}
+
+def add_os_peca(os_id, peca_id, quantidade, db):
+    os_peca = OSPecaModel(
+        ordem_id=os_id,    
+        peca_id=peca_id,
+        quantidade=quantidade
+    )
+    db.add(os_peca)
+    db.commit()
+    db.refresh(os_peca)
+    return os_peca
+
+def get_peca_da_os(os_id, peca_id, db):
+    return db.query(OSPecaModel).filter(
+        OSPecaModel.ordem_id == os_id,  
+        OSPecaModel.peca_id == peca_id
+    ).first()
+
+def remove_os_peca(os_id, peca_id, db):
+    os_peca = get_peca_da_os(os_id, peca_id, db)
+    db.delete(os_peca)
+    db.commit()
+
+def add_service_os(os_id, servico_id, db):
+    os_servico = OSServicoModel(
+        ordem_id=os_id,
+        servico_id=servico_id
+    )
+    db.add(os_servico)
+    db.commit()
+    db.refresh(os_servico)
+
+    return os_servico
+
+def get_os_service(os_id, servico_id, db):
+    return db.query(OSServicoModel).filter(
+        OSServicoModel.ordem_id == os_id,
+        OSServicoModel.servico_id == servico_id
+    ).first()
+
+def remove_service_os(os_id, servico_id, db):
+    os_servico = get_os_service(os_id, servico_id, db)
+    db.delete(os_servico)
+    db.commit()
+
+    return os_servico
