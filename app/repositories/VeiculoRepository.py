@@ -1,5 +1,4 @@
 from app.domain.models.Veiculo_model import Veiculo as VeiculoModel
-from fastapi import HTTPException
 
 def get_vehicle(placa, db):
     placa_consultada = db.query(VeiculoModel).filter(VeiculoModel.placa == placa).first()
@@ -22,13 +21,10 @@ def add_veiculo(veiculo, db):
 def delete_vehicle(veiculo_placa, db):
     veiculo = db.query(VeiculoModel).filter(VeiculoModel.placa == veiculo_placa).first()
 
-    if not veiculo:
-        raise HTTPException(status_code=404, detail="Veículo com essa placa não encontrado")
-
     db.delete(veiculo)
     db.commit()
 
-    return {"message": "Veículo removido com sucesso"}
+    return veiculo
 
 def update_vehicle_info(veiculo, dados, db):
     for campo, valor in dados.model_dump(exclude_none=True).items():
@@ -41,6 +37,4 @@ def update_vehicle_info(veiculo, dados, db):
 def get_all_vehicles(db):
     veiculos = db.query(VeiculoModel).all()
 
-    if veiculos:
-        return veiculos
-    raise HTTPException(status_code=404, detail="Nenhum veículo foi cadastrado.")
+    return veiculos
