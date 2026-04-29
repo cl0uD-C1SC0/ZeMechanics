@@ -1,5 +1,4 @@
 from app.domain.models.Peca_model import Peca as PecaModel
-from fastapi import HTTPException
 
 def add_peca(peca, db):
     nova_peca = PecaModel(
@@ -16,9 +15,7 @@ def add_peca(peca, db):
 def get_all_pecas(db):
     pecas = db.query(PecaModel).all()
 
-    if pecas:
-        return pecas
-    raise HTTPException(status_code=404, detail="Nenhma peça cadastrada")
+    return pecas
 
 def describe_peca(peca_id, db):
     peca = db.query(PecaModel).filter(PecaModel.id == peca_id).first()
@@ -30,38 +27,26 @@ def update_peca(peca, dados, db):
 
     db.commit()
     db.refresh(peca)
-    return {"message": f"Peça {peca.id} atualizada com sucesso"}
+    return peca
 
 def delete_peca(peca_id, db):
     peca = db.query(PecaModel).filter(PecaModel.id == peca_id).first()
 
-    if not peca:
-        raise HTTPException(status_code=404, detail="Peça com esse ID não foi encontrada")
-
     db.delete(peca)
     db.commit()
 
-    return {"message": "Peça removida com sucesso"}
+    return peca
 
-def add_peca_amount(peca_id, qtd_adicionar, db):
-    peca = db.query(PecaModel).filter(PecaModel.id == peca_id).first()
+def add_peca_amount(peca, qtd_adicionar, db):
 
-    if not peca:
-        raise HTTPException(status_code=404, detail="Serviço com esse ID não foi encontrado")
-    
     peca.quantidade += qtd_adicionar
     db.commit()
     db.refresh(peca)
-    return {"message": f"Adicionado {qtd_adicionar} unidade(s) no serviço {peca.nome}"}
+    return peca
 
-def remove_peca_amount(peca_id, qtd_remover, db):
-    peca = db.query(PecaModel).filter(PecaModel.id == peca_id).first()
+def remove_peca_amount(peca, qtd_remover, db):
 
-    if not peca:
-        raise HTTPException(status_code=404, detail="Serviço com esse ID não foi encontrado")
-    
     peca.quantidade -= qtd_remover
     db.commit()
     db.refresh(peca)
-    return {"message": f"Removido {qtd_remover} unidade(s) do serviço {peca.nome}"}
-
+    return peca
