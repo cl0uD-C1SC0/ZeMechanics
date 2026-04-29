@@ -1,7 +1,4 @@
 from app.domain.models.Servico_model import Servicos as ServicoModel
-from fastapi import HTTPException
-
-
 
 def add_mechanic_service(service, db):
     novo_servico = ServicoModel(
@@ -17,10 +14,7 @@ def add_mechanic_service(service, db):
 
 def get_all_services(db):
     servicos = db.query(ServicoModel).all()
-    
-    if servicos:
-        return servicos
-    raise HTTPException(status_code=404, detail="Nenhum serviço cadastrado")
+    return servicos
 
 def describe_service(servico_id, db):
     servico = db.query(ServicoModel).filter(ServicoModel.id == servico_id).first()
@@ -32,16 +26,13 @@ def update_service(servico, dados, db):
 
     db.commit()
     db.refresh(servico)
-    return {"message": f"Serviço {servico.id} atualizado com sucesso"}
+    return servico
 
 def delete_service(servico_id, db):
     servico = db.query(ServicoModel).filter(ServicoModel.id == servico_id).first()
-
-    if not servico:
-        raise HTTPException(status_code=404, detail="Serviço com esse ID não foi encontrado")
     
     db.delete(servico)
     db.commit()
 
-    return {"message": "Serviço removido com sucesso"}
+    return servico
 
