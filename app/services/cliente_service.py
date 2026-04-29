@@ -29,7 +29,7 @@ def validar_cpf(cpf):
 
 def cadastrar_cliente(cliente, db):
     if cliente_repository.get_specific_client(cliente.cpf, db):
-        raise HTTPException(status_code=409, detail="CPF Encontrado no sistema, tente novamente.")
+        raise HTTPException(status_code=409, detail="O CPF inserido já foi cadastrado no sistema")
     
     validar_cpf(cliente.cpf)
     
