@@ -18,9 +18,9 @@ class OrdemDeServico(Base):
 
     cliente  = relationship("Cliente", back_populates="ordens")
     veiculo  = relationship("Veiculo", back_populates="ordens")
-    pecas    = relationship("Peca", secondary="os_pecas", backref="ordens")
+    pecas    = relationship("Peca", secondary="os_pecas", backref="ordens", overlaps="os_pecas,ordem")
     servicos = relationship("Servicos", secondary="os_servicos", backref="ordens")
-
+    os_pecas = relationship("OSPeca", back_populates="ordem", overlaps="ordens,pecas")
 
 class OSPeca(Base):
     __tablename__ = "os_pecas"
@@ -29,6 +29,9 @@ class OSPeca(Base):
     ordem_id   = Column(Integer, ForeignKey("ordens_de_servico.id"))
     peca_id    = Column(Integer, ForeignKey("pecas.id"))
     quantidade = Column(Integer, default=1)
+
+    ordem = relationship("OrdemDeServico", back_populates="os_pecas", overlaps="ordens,pecas")
+    peca  = relationship("Peca", overlaps="ordens,pecas")
 
 class OSServico(Base):
     __tablename__ = "os_servicos"
