@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import Annotated
 
 from app.database import get_db
-from app.services import cliente_service as cliente_service
+from app.services import cliente_service
 from app.schemas.cliente_schema import ClienteSchema, ConsultAllClientsResponse, ConsultClientResponse, ClienteUpdateSchema
 
 router = APIRouter(prefix="/cliente", tags=["Clientes v1"])
