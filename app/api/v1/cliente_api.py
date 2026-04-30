@@ -15,6 +15,11 @@ def cadastrar_cliente(cliente: ClienteSchema, db: DB):
     novo_cliente = cliente_service.cadastrar_cliente(cliente, db)
     return novo_cliente
 
+@router.get("/clientes", response_model=list[ConsultAllClientsResponse], summary="LISTAR TODOS OS CLIENTES", description="Lista todas as informações, incluindo o ID dos clientes")
+def listar_clientes(db: DB):
+    clientes = cliente_service.listar_clientes(db)
+    return clientes
+
 @router.get("/{cpf}", response_model=ConsultClientResponse, summary="CONSULTAR UM CLIENTE", description="Consultar todos os dados de um cliente com base em um CPF")
 def consultar_cliente(cpf: int, db: DB):
     cliente = cliente_service.consultar_cliente(cpf, db)    
@@ -30,11 +35,6 @@ def atualizar_cliente(cpf: int, dados: ClienteUpdateSchema, db: DB):
     dados_atualizados = cliente_service.atualizar_informacao_cliente(cpf, dados, db)
     return dados_atualizados
 
-@router.get("/clientes", response_model=list[ConsultAllClientsResponse], summary="LISTAR TODOS OS CLIENTES", description="Lista todas as informações, incluindo o ID dos clientes")
-def listar_clientes(db: DB):
-    clientes = cliente_service.listar_clientes(db)
-    return clientes
-    
 @router.patch("/{novo_cpf}/transferir_veiculo/{placa}", summary="TRANSFERIR VEÍCULO À OUTRO CPF", description="Transferir um veículo para um novo CPF")
 def transferir_veiculo(novo_cpf: int, placa: str, db: DB):
     veiculo_transferido = cliente_service.transferir_veiculo_cliente(placa, novo_cpf, db)
