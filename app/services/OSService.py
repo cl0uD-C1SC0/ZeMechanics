@@ -27,9 +27,12 @@ def criar_nova_os(os, db):
             detail=f"Já existe uma OS aberta para este veículo — OS ID {os_aberta.id}",
         )
 
-    if os.veiculo_placa not in cliente_veiculo:
+    placas_do_cliente = [v.placa for v in cliente_veiculo]
+
+    if os.veiculo_placa not in placas_do_cliente:
         raise HTTPException(
-            400, detail="O Veículo inserido não pertence à este CPF, tente novamente"
+            status_code=400,
+            detail="O veículo inserido não pertence a este CPF"
         )
 
     if not cliente:
