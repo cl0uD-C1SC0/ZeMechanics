@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional
+from app.schemas.shared_schemas import ClienteResumo
 class VeiculoSchema(BaseModel):
     modelo: str
     marca: str
@@ -23,12 +24,19 @@ class UpdateVehicleSchema(BaseModel):
     ano: Optional[str] = None
 
 class ConsultClientVeiculoResponse(BaseModel):
-    veiculo_id: Optional[int] = Field(default=None, alias="id")
-    marca: Optional[str] = None
-    modelo: Optional[str] = None
-    placa: Optional[str] = None
-    ano: Optional[str] = None
+    id: int
+    marca: str
+    modelo: str
+    placa: str
+    ano: str
+    cliente: ClienteResumo 
 
     class Config:
         from_attributes = True
         populate_by_name = True
+
+class ConsultAllVehicles(BaseModel):
+    id: int
+    placa: str
+    class Config:
+        from_attributes = True
