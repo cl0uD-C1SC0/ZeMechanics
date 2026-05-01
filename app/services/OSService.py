@@ -1,5 +1,6 @@
 from app.repositories import OSRepository
 from fastapi import HTTPException
+from fastapi.responses import HTMLResponse
 
 from app.services import cliente_service as cliente_service
 from app.services import peca_service as peca_service
@@ -15,11 +16,19 @@ from app.domain.enums.StatusOS import TRANSICAO_STATUS
 def criar_nova_os(os, db):
 
     cliente = cliente_service.consultar_cliente(os.cliente_cpf, db)
+    cliente_veiculo = cliente_service.listar_veiculos_cliente(cliente.cpf, db)
     veiculo = veiculo_service.consultar_veiculo(os.veiculo_placa, db) 
+
+    os_aberta = OSRepository.validate_is_os_open(veiculo.id, db)
+    if os_aberta:
+        raise HTTPException(status_code=409, detail=f"Já existe uma OS aberta para este veículo — OS ID {os_aberta.id}")
+
+    if os.veiculo_placa not in cliente_veiculo:
+        raise HTTPException(400, detail="O Veículo inserido não pertence à este CPF, tente novamente")
 
     if not cliente:
         raise HTTPException(404, detail="Cliente não encontrado!")
-
+    
     if not veiculo:
         raise HTTPException(404, "Veículo não encontrado!")
 
@@ -36,6 +45,10 @@ def listar_todas_os(db):
 
 def atualizar_os(os_id, dados, db):
     dados_dict = dados.model_dump(exclude_none=True)
+
+    os = OSRepository.get_specific_os(os_id, db)
+    if not os:
+        raise HTTPException(status_code=404, detail="OS não encontrada")
 
     if "veiculo_placa" in dados_dict:
         veiculo = veiculo_service.consultar_veiculo(dados_dict.pop("veiculo_placa"), db)
@@ -73,15 +86,15 @@ def consultar_os(os_id, db):
     total          = total_pecas + total_servicos    
 
     return {
-        "OS ID": os_consultada.id,
-        "Status atual": os_consultada.status,
-        "CPF": os_consultada.cliente.cpf,
-        "Veículo": os_consultada.veiculo.placa,
-        "Peças": [
+        "id": os_consultada.id,
+        "status": os_consultada.status,
+        "cliente_cpf": os_consultada.cliente.cpf,
+        "veiculo_placa": os_consultada.veiculo.placa,
+        "pecas": [
             {"nome": peca_add.peca.nome, "quantidade": peca_add.quantidade, "valor": peca_add.peca.preco}
             for peca_add in os_consultada.os_pecas
         ],
-        "Serviços": [
+        "servicos": [
             {"nome": service_add.nome, "valor": service_add.preco}
             for service_add in os_consultada.servicos
         ],
@@ -105,7 +118,7 @@ def avancar_os(os_id, db):
     return OSRepository.advance_os(os, proximo_status, db)
 
 def aprovar_os(os_id, cliente_cpf, db):
-    os = consultar_os(os_id, db)
+    os = OSRepository.get_specific_os(os_id, db)
     
     if not os:
         raise HTTPException(status_code=404, detail="OS não encontrada")
@@ -172,3 +185,49 @@ def remover_servico_os(os_id, servico_id, db):
 
     OSRepository.remove_service_os(os_id, servico_id, db)
     return {"message": f"Serviço removido da OS {os_id}"}
+
+
+def _mostrar_aprovacao(os_id, dados_os, cliente_cpf):
+    if dados_os["status"] == "Entregue":
+        return {"message": "A Ordem de Serviço já foi Entregue ao Cliente."}
+    
+    if dados_os["status"] == "Finalizada":
+        return {"message": "A Ordem de Serviço já foi Finalizada"}
+
+    pecas_html = "".join([
+        f"<tr><td>{p['nome']}</td><td>{p['quantidade']}</td><td>R$ {p['valor']}</td></tr>"
+        for p in dados_os["pecas"]
+    ])
+
+    servicos_html = "".join([
+        f"<tr><td>{s['nome']}</td><td>R$ {s['valor']}</td></tr>"
+        for s in dados_os["servicos"]
+    ])
+
+    return HTMLResponse(f"""
+        <html>
+        <body>
+            <h2>OS #{id} — Aguardando Aprovação</h2>
+            <p><b>Status:</b> {dados_os["status"]}</p>
+            <p><b>Veículo:</b> {dados_os["veiculo_placa"]}</p>
+
+            <h3>Peças</h3>
+            <table border="1">
+                <tr><th>Nome</th><th>Quantidade</th><th>Valor</th></tr>
+                {pecas_html}
+            </table>
+
+            <h3>Serviços</h3>
+            <table border="1">
+                <tr><th>Nome</th><th>Valor</th></tr>
+                {servicos_html}
+            </table>
+
+            <h3>Total: R$ {dados_os["Total"]}</h3>
+
+            <form method="post" action="/api/v1/ordem_servico/confirmar_aprovacao/{os_id}?cliente_cpf={cliente_cpf}">
+                <button type="submit">✅ Aprovar OS</button>
+            </form>
+        </body>
+        </html>
+    """)
