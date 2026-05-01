@@ -3,7 +3,7 @@ from app.domain.models.OrdemServico_model import OSPeca as OSPecaModel
 from app.domain.models.OrdemServico_model import OSServico as OSServicoModel
 
 from app.domain.enums.StatusOS import StatusOS
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.services.EmailService import enviar_email_aprovacao
 
@@ -48,11 +48,11 @@ def advance_os(os, proximo_status, db):
     os.status = proximo_status
 
     if proximo_status == StatusOS.EM_EXECUCAO:
-        os.iniciado_em = datetime.utcnow()
+        os.iniciado_em = datetime.now(timezone.utc)
     elif proximo_status == StatusOS.FINALIZADA:
-        os.finalizado_em = datetime.utcnow()
+        os.finalizado_em = datetime.now(timezone.utc)
     elif proximo_status == StatusOS.ENTREGUE:
-        os.entregue_em = datetime.utcnow()
+        os.entregue_em = datetime.now(timezone.utc)
     elif proximo_status == StatusOS.AGUARDANDO_APROVACAO:
         enviar_email_aprovacao(os)
 
