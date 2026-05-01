@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from typing import Annotated
 from app.database import get_db
-from app.schemas.Servico import ServicoSchema, UpdateServiceSchema
+from app.schemas.Servico import ServicoSchema, UpdateServiceSchema, ConsultAllServicosSchema
 from app.services import servico_service as servico_service
 
 router = APIRouter(prefix="/servico", tags=["Serviços v1"])
@@ -13,7 +13,7 @@ def cadastrar_servico(servico: ServicoSchema, db: DB):
     novo_servico = servico_service.adicionar_servico(servico, db)
     return novo_servico
 
-@router.get("/servicos", summary="LISTAR TODOS OS SERVIÇOS", description="Lista todos os serviços cadastrados no sistema")
+@router.get("/servicos", response_model=list[ConsultAllServicosSchema], summary="LISTAR TODOS OS SERVIÇOS", description="Lista todos os serviços cadastrados no sistema")
 def listar_servicos(db: DB):
     servicos = servico_service.listar_todos_servicos(db)
     return servicos
