@@ -13,35 +13,45 @@ from app.repositories import ServicosRepository
 from app.domain.enums.StatusOS import StatusOS
 from app.domain.enums.StatusOS import TRANSICAO_STATUS
 
+
 def criar_nova_os(os, db):
 
     cliente = cliente_service.consultar_cliente(os.cliente_cpf, db)
     cliente_veiculo = cliente_service.listar_veiculos_cliente(cliente.cpf, db)
-    veiculo = veiculo_service.consultar_veiculo(os.veiculo_placa, db) 
+    veiculo = veiculo_service.consultar_veiculo(os.veiculo_placa, db)
 
     os_aberta = OSRepository.validate_is_os_open(veiculo.id, db)
     if os_aberta:
-        raise HTTPException(status_code=409, detail=f"Já existe uma OS aberta para este veículo — OS ID {os_aberta.id}")
+        raise HTTPException(
+            status_code=409,
+            detail=f"Já existe uma OS aberta para este veículo — OS ID {os_aberta.id}",
+        )
 
     if os.veiculo_placa not in cliente_veiculo:
-        raise HTTPException(400, detail="O Veículo inserido não pertence à este CPF, tente novamente")
+        raise HTTPException(
+            400, detail="O Veículo inserido não pertence à este CPF, tente novamente"
+        )
 
     if not cliente:
         raise HTTPException(404, detail="Cliente não encontrado!")
-    
+
     if not veiculo:
         raise HTTPException(404, "Veículo não encontrado!")
 
     nova_os = OSRepository.create_new_os(cliente, veiculo, db)
 
     if nova_os:
-        return {"message": f"Nova Ordem de Serviço foi criada, ID: {nova_os.id} "} 
+        return {"message": f"Nova Ordem de Serviço foi criada, ID: {nova_os.id} "}
+
 
 def listar_todas_os(db):
     todas_os = OSRepository.get_all_os(db)
     if not todas_os:
-        raise HTTPException(status_code=404, detail="Nenhuma Ordem de Serviço foi criada")
+        raise HTTPException(
+            status_code=404, detail="Nenhuma Ordem de Serviço foi criada"
+        )
     return todas_os
+
 
 def atualizar_os(os_id, dados, db):
     dados_dict = dados.model_dump(exclude_none=True)
@@ -54,16 +64,17 @@ def atualizar_os(os_id, dados, db):
         veiculo = veiculo_service.consultar_veiculo(dados_dict.pop("veiculo_placa"), db)
         if not veiculo:
             raise HTTPException(status_code=404, detail="Veículo não encontrado")
-        dados_dict["veiculo_id"] = veiculo.id  
+        dados_dict["veiculo_id"] = veiculo.id
 
     if "cliente_cpf" in dados_dict:
         cliente = cliente_service.consultar_cliente(dados_dict.pop("cliente_cpf"), db)
         if not cliente:
             raise HTTPException(status_code=404, detail="Cliente não encontrado")
-        dados_dict["cliente_id"] = cliente.id  
+        dados_dict["cliente_id"] = cliente.id
 
     os_atualizada = OSRepository.update_os(os_id, dados_dict, db)
     return {"message": f"OS {os_atualizada.id} atualizada com sucesso"}
+
 
 def remover_os(os_id, db):
     os_consultada = OSRepository.get_specific_os(os_id, db)
@@ -73,7 +84,10 @@ def remover_os(os_id, db):
 
     if OSRepository.remove_os(os_id, db):
         return {"message": "OS Removida com sucesso"}
-    raise HTTPException(status_code=500, detail="Não foi possível remover a OS, tente novamente.")
+    raise HTTPException(
+        status_code=500, detail="Não foi possível remover a OS, tente novamente."
+    )
+
 
 def consultar_os(os_id, db):
     os_consultada = OSRepository.get_specific_os(os_id, db)
@@ -81,9 +95,9 @@ def consultar_os(os_id, db):
     if not os_consultada:
         raise HTTPException(status_code=404, detail="OS não encontrada")
 
-    total_pecas    = sum(p.preco for p in os_consultada.pecas)
+    total_pecas = sum(p.preco for p in os_consultada.pecas)
     total_servicos = sum(s.preco for s in os_consultada.servicos)
-    total          = total_pecas + total_servicos    
+    total = total_pecas + total_servicos
 
     return {
         "id": os_consultada.id,
@@ -91,45 +105,55 @@ def consultar_os(os_id, db):
         "cliente_cpf": os_consultada.cliente.cpf,
         "veiculo_placa": os_consultada.veiculo.placa,
         "pecas": [
-            {"nome": peca_add.peca.nome, "quantidade": peca_add.quantidade, "valor": peca_add.peca.preco}
+            {
+                "nome": peca_add.peca.nome,
+                "quantidade": peca_add.quantidade,
+                "valor": peca_add.peca.preco,
+            }
             for peca_add in os_consultada.os_pecas
         ],
         "servicos": [
             {"nome": service_add.nome, "valor": service_add.preco}
             for service_add in os_consultada.servicos
         ],
-        "Total": round(total, 2)
+        "Total": round(total, 2),
     }
+
 
 def avancar_os(os_id, db):
     os = OSRepository.get_specific_os(os_id, db)
-    
+
     if not os:
         raise HTTPException(status_code=404, detail="OS não encontrada")
-    
+
     if os.status == StatusOS.AGUARDANDO_APROVACAO:
-        raise HTTPException(status_code=400, detail="OS aguardando aprovação do cliente — use a rota /aprovar")
-    
+        raise HTTPException(
+            status_code=400,
+            detail="OS aguardando aprovação do cliente — use a rota /aprovar",
+        )
+
     proximo_status = TRANSICAO_STATUS.get(os.status)
-    
+
     if not proximo_status:
         raise HTTPException(status_code=400, detail="OS já está no status final")
-    
+
     return OSRepository.advance_os(os, proximo_status, db)
+
 
 def aprovar_os(os_id, cliente_cpf, db):
     os = OSRepository.get_specific_os(os_id, db)
-    
+
     if not os:
         raise HTTPException(status_code=404, detail="OS não encontrada")
-    
+
     if os.status != StatusOS.AGUARDANDO_APROVACAO:
         raise HTTPException(status_code=400, detail="OS não está aguardando aprovação")
-    
+
     if str(os.cliente.cpf) != cliente_cpf:
         raise HTTPException(status_code=403, detail="CPF não autorizado")
 
     return OSRepository.approve_os(os, db)
+
 
 def adicionar_peca_os(os_id, peca_id, quantidade, db):
     os = OSRepository.get_specific_os(os_id, db)
@@ -141,12 +165,16 @@ def adicionar_peca_os(os_id, peca_id, quantidade, db):
         raise HTTPException(status_code=404, detail="Peça não encontrada")
 
     if peca.quantidade < quantidade:
-        raise HTTPException(status_code=400, detail=f"Estoque insuficiente — disponível: {peca.quantidade}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Estoque insuficiente — disponível: {peca.quantidade}",
+        )
 
     peca_service.remover_do_estoque(peca_id, quantidade, db)
 
     resultado = OSRepository.add_os_peca(os_id, peca_id, quantidade, db)
     return {"message": f"{quantidade}x {peca.nome} adicionada à OS {os_id}"}
+
 
 def remover_peca_os(os_id, peca_id, db):
     os = OSRepository.get_specific_os(os_id, db)
@@ -162,6 +190,7 @@ def remover_peca_os(os_id, peca_id, db):
     OSRepository.remove_os_peca(os_id, peca_id, db)
     return {"message": f"Peça removida da OS {os_id} e quantidade devolvida ao estoque"}
 
+
 def adicionar_servico_os(os_id, servico_id, db):
     os = OSRepository.get_specific_os(os_id, db)
     if not os:
@@ -173,6 +202,7 @@ def adicionar_servico_os(os_id, servico_id, db):
 
     resultado = OSRepository.add_service_os(os_id, servico_id, db)
     return {"message": f"{servico.nome} adicionado à OS {os_id}"}
+
 
 def remover_servico_os(os_id, servico_id, db):
     os = OSRepository.get_specific_os(os_id, db)
@@ -190,19 +220,23 @@ def remover_servico_os(os_id, servico_id, db):
 def _mostrar_aprovacao(os_id, dados_os, cliente_cpf):
     if dados_os["status"] == "Entregue":
         return {"message": "A Ordem de Serviço já foi Entregue ao Cliente."}
-    
+
     if dados_os["status"] == "Finalizada":
         return {"message": "A Ordem de Serviço já foi Finalizada"}
 
-    pecas_html = "".join([
-        f"<tr><td>{p['nome']}</td><td>{p['quantidade']}</td><td>R$ {p['valor']}</td></tr>"
-        for p in dados_os["pecas"]
-    ])
+    pecas_html = "".join(
+        [
+            f"<tr><td>{p['nome']}</td><td>{p['quantidade']}</td><td>R$ {p['valor']}</td></tr>"
+            for p in dados_os["pecas"]
+        ]
+    )
 
-    servicos_html = "".join([
-        f"<tr><td>{s['nome']}</td><td>R$ {s['valor']}</td></tr>"
-        for s in dados_os["servicos"]
-    ])
+    servicos_html = "".join(
+        [
+            f"<tr><td>{s['nome']}</td><td>R$ {s['valor']}</td></tr>"
+            for s in dados_os["servicos"]
+        ]
+    )
 
     return HTMLResponse(f"""
         <html>
