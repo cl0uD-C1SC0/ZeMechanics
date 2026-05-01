@@ -17,18 +17,16 @@ app = FastAPI(
     description="Swagger UI - FIAP",
     version="1.0",
     docs_url=None,
-    contact={
-        "RM": "rm371895",
-        "Nome": "Jose Silva"
-    }
+    contact={"RM": "rm371895", "Nome": "Jose Silva"},
 )
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
+
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger():
     html = get_swagger_ui_html(
-        openapi_url="/openapi.json",  # <- esse é obrigatório!
+        openapi_url="/openapi.json",
         title="Ze Mechanics LTDA",
         swagger_favicon_url="/static/images/Logo-ZeMechanicsLTDA.ico",
         swagger_ui_parameters={
@@ -37,8 +35,9 @@ async def custom_swagger():
             "filter": True,
             "displayRequestDuration": True,
             "persistAuthorization": True,
-        }
+        },
     )
     return html
+
 
 app.include_router(router, prefix="/api/v1")
