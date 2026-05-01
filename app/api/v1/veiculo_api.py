@@ -4,7 +4,7 @@ from typing import Annotated
 
 from app.services import veiculo_service
 from app.database import get_db
-from app.schemas.VeiculoSchema import VeiculoSchema, UpdateVehicleSchema
+from app.schemas.VeiculoSchema import VeiculoSchema, UpdateVehicleSchema, ConsultClientVeiculoResponse, ConsultAllVehicles
 
 router = APIRouter(prefix="/veiculo", tags=["Veiculos v1"])
 DB = Annotated[Session, Depends(get_db)]
@@ -14,12 +14,12 @@ def cadastrar_veiculo(veiculo: VeiculoSchema, db: DB):
     veiculo = veiculo_service.cadastrar_veiculo(veiculo, db)
     return veiculo
 
-@router.get("/consultar_placa/{placa}", summary="CONSULTAR UM VEÍCULO ESPECÍFICO", description="Consulta um veículo específico e suas informações com base na Placa")
+@router.get("/consultar_placa/{placa}", response_model=ConsultClientVeiculoResponse, summary="CONSULTAR UM VEÍCULO ESPECÍFICO", description="Consulta um veículo específico e suas informações com base na Placa")
 def consultar_placa(placa: str, db: DB):
     veiculo_consultado = veiculo_service.consultar_veiculo(placa, db)
     return veiculo_consultado
 
-@router.get("/veiculos", summary="LISTAR TODOS OS VEÍCULOS", description="Lista todos os veículos e seus respectivos donos (cliente_id)")
+@router.get("/veiculos", response_model=list[ConsultAllVehicles], summary="LISTAR TODOS OS VEÍCULOS", description="Lista todos os veículos cadastrados com: ID, cliente_id e placa")
 def listar_veiculos(db: DB):
     veiculos = veiculo_service.listar_todos_veiculos(db)
     return veiculos
