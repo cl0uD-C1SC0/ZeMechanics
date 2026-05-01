@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 from typing import Annotated
 from app.database import get_db
-from app.schemas.Peca import PecaSchema, UpdatePecaSchema
+from app.schemas.Peca import PecaSchema, UpdatePecaSchema, ConsultAllPecasSchema
 from app.services import peca_service as peca_service
 
 router = APIRouter(prefix="/peca", tags=["Peças v1"])
@@ -29,7 +29,7 @@ def adicionar_ao_estoque(peca_id: int, db: DB, quantidade: int = Query(..., gt=0
     estoque_adicionado = peca_service.adicionar_ao_estoque(peca_id, quantidade, db)
     return estoque_adicionado
 
-@router.get("/pecas", summary="LISTAR TODAS AS PEÇAS", description="Lista todas as peças cadastradas")
+@router.get("/pecas", response_model=list[ConsultAllPecasSchema], summary="LISTAR TODAS AS PEÇAS", description="Lista todas as peças cadastradas")
 def listar_pecas(db: DB):
     pecas = peca_service.listar_todas_pecas(db)
     return pecas
