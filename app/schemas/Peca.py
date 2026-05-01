@@ -18,3 +18,10 @@ class PecaResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ConsultAllPecasSchema(BaseModel):
+    id: int
+    nome: str
+
+    class Config:
+        from_attributes = True
