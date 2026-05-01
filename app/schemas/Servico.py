@@ -16,3 +16,7 @@ class ServicoResponse(BaseModel):
     preco: float
     class Config:
         from_attributes = True
+
+class ConsultAllServicosSchema(BaseModel):
+    id: int
+    nome: str
