@@ -110,3 +110,9 @@ def remove_service_os(os_id, servico_id, db):
     db.commit()
 
     return os_servico
+
+def validate_is_os_open(veiculo_id, db):
+    return db.query(OSModel).filter(
+        OSModel.veiculo_id == veiculo_id,
+        OSModel.status != StatusOS.ENTREGUE
+    ).first()
