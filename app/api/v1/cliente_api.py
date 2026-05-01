@@ -5,7 +5,7 @@ from typing import Annotated
 
 from app.database import get_db
 from app.services import cliente_service
-from app.schemas.cliente_schema import ClienteSchema, ConsultAllClientsResponse, ConsultClientResponse, ClienteUpdateSchema
+from app.schemas.cliente_schema import ClienteSchema, ConsultAllClientsResponse, ClienteUpdateSchema, ConsultClientResponse
 
 router = APIRouter(prefix="/cliente", tags=["Clientes v1"])
 DB = Annotated[Session, Depends(get_db)]
@@ -28,7 +28,7 @@ def consultar_cliente(cpf: int, db: DB):
 @router.get("/{cpf}/veiculos", summary="LISTAR APENAS OS VEÍCULOS DO CLIENTE", description="Consulta todos os veículos do cliente que foram cadastrados")
 def listar_veiculos_do_cliente(cpf: int, db: DB):
     cliente_veiculos = cliente_service.listar_veiculos_cliente(cpf, db)
-    return cliente_veiculos.veiculos 
+    return cliente_veiculos
 
 @router.patch("/{cpf}/atualizar_informacoes", summary="ATUALIZAR DADOS DO CLIENTE", description="Atualizar dados como NOME, CONTATO, ENDERECO")
 def atualizar_cliente(cpf: int, dados: ClienteUpdateSchema, db: DB):
