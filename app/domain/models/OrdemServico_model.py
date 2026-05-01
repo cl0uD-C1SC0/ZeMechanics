@@ -2,14 +2,14 @@ from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from app.database import Base
 from app.domain.enums.StatusOS import StatusOS
-from datetime import datetime
+from datetime import datetime, timezone
 
 class OrdemDeServico(Base):
     __tablename__ = "ordens_de_servico"
 
     id            = Column(Integer, primary_key=True, index=True)
     status        = Column(String(50), default=StatusOS.RECEBIDA)
-    criado_em     = Column(DateTime, default=datetime.utcnow)
+    criado_em     = Column(DateTime, default=datetime.now(timezone.utc))
     iniciado_em   = Column(DateTime, nullable=True)   
     finalizado_em = Column(DateTime, nullable=True)   
     entregue_em   = Column(DateTime, nullable=True)
