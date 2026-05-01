@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, Query, status
-from fastapi.responses import HTMLResponse
 from typing import Annotated
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -14,7 +13,7 @@ def criar_os(os: OrdemDeServicoSchema, db: DB):
     nova_os = os_service.criar_nova_os(os, db)
     return nova_os
 
-@router.get("/consultar/{os_id}", summary="CONSULTAR UMA os", description="Consultar todas as informações de uma OS")
+@router.get("/consultar/{os_id}", summary="CONSULTAR UMA OS", description="Consultar todas as informações de uma OS")
 def consultar_ordemservico(os_id: int, db: DB):
     os_consultada = os_service.consultar_os(os_id, db)
     return os_consultada
@@ -51,44 +50,9 @@ def listar_todas_as_os(db: DB):
 @router.get("/aprovar/{os_id}", summary="APROVAR UMA OS", description="Aprovar uma Ordem de serviço quando estiver com Status = 'AGUARDANDO APROVAÇÃO'")
 def pagina_aprovacao(os_id: int, db: DB, cliente_cpf: str = Query(...)):
     dados_os = os_service.consultar_os(os_id, db)
-    
-    pecas_html = "".join([
-        f"<tr><td>{p['nome']}</td><td>{p['quantidade']}</td><td>R$ {p['valor']}</td></tr>"
-        for p in dados_os["Peças"]
-    ])
+    os_pagina_aprovacao = os_service._mostrar_aprovacao(os_id, dados_os, cliente_cpf)
 
-    servicos_html = "".join([
-        f"<tr><td>{s['nome']}</td><td>R$ {s['valor']}</td></tr>"
-        for s in dados_os["Serviços"]
-    ])
-
-    return HTMLResponse(f"""
-        <html>
-        <body>
-            <h2>OS #{os_id} — Aguardando Aprovação</h2>
-            <p><b>Status:</b> {dados_os["Status atual"]}</p>
-            <p><b>Veículo:</b> {dados_os["Veículo"]}</p>
-
-            <h3>Peças</h3>
-            <table border="1">
-                <tr><th>Nome</th><th>Quantidade</th><th>Valor</th></tr>
-                {pecas_html}
-            </table>
-
-            <h3>Serviços</h3>
-            <table border="1">
-                <tr><th>Nome</th><th>Valor</th></tr>
-                {servicos_html}
-            </table>
-
-            <h3>Total: R$ {dados_os["Total"]}</h3>
-
-            <form method="post" action="/api/v1/ordem_servico/confirmar_aprovacao/{os_id}?cliente_cpf={cliente_cpf}">
-                <button type="submit">✅ Aprovar OS</button>
-            </form>
-        </body>
-        </html>
-    """)
+    return os_pagina_aprovacao
 
 @router.delete("/{os_id}/remover_peca/{peca_id}", summary="REMOVER UMA PEÇA DA OS", description="Remover uma peça adicionada na OS")
 def remover_peca_os(os_id: int, peca_id: int, db: DB):
