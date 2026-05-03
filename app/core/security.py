@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from dotenv import load_dotenv
@@ -19,7 +19,7 @@ pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 def criar_token(data: dict) -> str:
     payload = data.copy()
-    payload["exp"] = datetime.utcnow() + timedelta(minutes=EXPIRES_IN)
+    payload["exp"] = datetime.now(timezone.utc) + timedelta(minutes=EXPIRES_IN)
     return jwt.encode(payload, SECRET_KEY_JWT, algorithm=ALGORITHM)
 
 def verificar_token(token: str) -> dict | None:
