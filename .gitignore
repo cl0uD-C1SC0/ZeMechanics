@@ -178,3 +178,4 @@ pyrightconfig.json
 test.py
 to-do.txt
 .sonar
+test_integration.db
