@@ -1,13 +1,13 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 class PecaSchema(BaseModel):
     nome: str
-    preco: float
+    preco: float = Field(gt=0)
     quantidade: int
 
 class UpdatePecaSchema(BaseModel):
     nome: Optional[str] = None
-    preco: Optional[str] = None
+    preco: Optional[float] = None
     
 
 class PecaResponse(BaseModel):
