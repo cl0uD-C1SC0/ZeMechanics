@@ -22,7 +22,7 @@ Os próximos itens a seguir conta quais **arquivos** devem ser criados neste dir
 O arquivo de **database.py** é o arquivo responsável por se *conectar* ao Banco de Dados da aplicação, veja mais detalhes de sua possível configuração:
 ```python
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
 
