@@ -88,6 +88,12 @@ docker-compose up -d
 * Abra o e-mail e aprove a OS
 * Avance novamente a OS até ser finalizada
 
+### Relatório SonarQube
+
+<div align="center">
+    <img src="app/static/images/SonarQube-Report.png">
+</div>
+
 ## 📫 Vamos nos conectar?
 
 <p align="center">
