@@ -28,6 +28,11 @@ Para **análise de código** foi utilizado o SonarQube, uma das maiores ferramen
 
 ## Índice
 
+* ➡️ [Estrutura de diretórios](docs/estrutura_diretorios.md)
+* ➡️ [Configurações do app/core](docs/core-configuracoes.md)
+* ➡️ [Como criar um ambiente virtual - Windows](docs/como-criar-venv.md)
+* ➡️ [Quais são as rotas existens](docs/apis-rotas.md)
+
 ## Stack
 
 <p align="center">
