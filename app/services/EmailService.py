@@ -1,8 +1,12 @@
 import smtplib
 from email.mime.text import MIMEText
+import os 
 
+SMTP_SERVER = str(os.getenv('MAIL_SERVER_ADDRESS'))
 
 def enviar_email_aprovacao(os):
+
+    
     msg = MIMEText(f"""
         Olá {os.cliente.nome}!
         
@@ -17,5 +21,5 @@ def enviar_email_aprovacao(os):
     msg["From"] = "oficina@zemechanics.com"
     msg["To"] = f"{os.cliente.email}"
 
-    with smtplib.SMTP("localhost", 1025) as server:
+    with smtplib.SMTP(SMTP_SERVER, 1025) as server:
         server.sendmail(msg["From"], msg["To"], msg.as_string())
