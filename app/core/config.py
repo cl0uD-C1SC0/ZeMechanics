@@ -1,12 +1,10 @@
 from  pydantic_settings import BaseSettings
 import os
-from dotenv import load_dotenv
+
 
 BASE_DIR = os.getcwd()
 
 dotenv = os.path.join(BASE_DIR, "../../env")
-
-load_dotenv()
 
 class Settings(BaseSettings):
     DATABASE_URL: str = str(os.getenv('DATABASE_URL'))
