@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   db:
     image: mysql:8.0
@@ -19,17 +17,21 @@ services:
       - "1080:1080" 
     restart: always
 
-  # api:
-  #   build: .
-  #   container_name: mecanica_api
-  #   restart: always
-  #   ports:
-  #     - "8000:8000"
-  #   environment:
-  #     DATABASE_URL: mysql+pymysql://root:root@db:3306/biblioteca
-  #     SECRET_KEY: 1234
-  #   depends_on:
-  #     - db
+  api:
+    build: .
+    container_name: mecanica_api
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: mysql+pymysql://root:root@db:3306/mecanica
+      SECRET_KEY: 1234
+      SECRET_KEY_JWT: admin123
+      USER_NAME: admin
+      USER_PASSWORD: admin1234
+      MAIL_SERVER_ADDRESS: maildev
+    depends_on:
+      - db
 
   db_sonarqube:
     image: postgres:15-alpine
