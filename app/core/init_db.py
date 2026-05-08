@@ -5,8 +5,8 @@ import os
 
 
 def init_db():
-    USER_NAME = os.getenv('USER_NAME')
-    USER_PASSWORD = os.getenv('USER_PASSWORD')
+    USER_NAME = os.getenv('USER_NAME', 'admin')
+    USER_PASSWORD = os.getenv('USER_PASSWORD', 'admin123')
     db = SessionLocal()
     try:
         usuario = usuario_repository.get_usuario(USER_NAME, db)
