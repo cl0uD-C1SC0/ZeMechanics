@@ -31,7 +31,7 @@ spec:
             - "until nc -z mysql 3306; do echo aguardando o mysql responder...; sleep 2; done"
       containers:
         - name: mecanica-container
-          image: "jayakuza/mecanica:67b3e"
+          image: "jayakuza/mecanica:87043"
           ports:
             - containerPort: 8000
           envFrom:
