@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query, status
 from typing import Annotated
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.schemas.OrdemServicoSchema import OrdemDeServicoSchema, OSUpdateSchema, OSResponse
+from app.schemas.OrdemServicoSchema import OrdemDeServicoSchema, OSUpdateSchema, OSResponse, OSCompletaSchema
 from app.services import OSService as os_service
 
 router = APIRouter(prefix="/ordem_servico", tags=["OrdemDeServico"])
@@ -12,6 +12,11 @@ DB = Annotated[Session, Depends(get_db)]
 def criar_os(os: OrdemDeServicoSchema, db: DB):
     nova_os = os_service.criar_nova_os(os, db)
     return nova_os
+
+@router.post("/nova_os_completa", status_code=status.HTTP_201_CREATED, summary="CADASTRAR UMA OS COMPLETA", description="Cadastra cliente, veículo e cria a OS em uma única chamada, associando peças e serviços já cadastrados no sistema")
+def criar_os_completa(dados: OSCompletaSchema, db: DB):
+    nova_os_completa = os_service.criar_os_completa(dados, db)
+    return nova_os_completa
 
 @router.get("/consultar/{os_id}", summary="CONSULTAR UMA OS", description="Consultar todas as informações de uma OS")
 def consultar_ordemservico(os_id: int, db: DB):
@@ -31,6 +36,10 @@ def adicionar_servico_os(os_id: int, servico_id: int, db: DB):
 @router.post("/confirmar_aprovacao/{os_id}", summary="CONFIRMAR APROVAÇÃO DA OS", description="Confirmar a aprovação de uma OS")
 def aprovar_os(os_id: int, db: DB, cliente_cpf: str = Query(...)):
     return os_service.aprovar_os(os_id, cliente_cpf, db)
+
+@router.post("/reprovar/{os_id}", summary="REPROVAR ORÇAMENTO DA OS", description="Recusar o orçamento de uma OS, encerrando-a definitivamente com o status Reprovada")
+def reprovar_os(os_id: int, db: DB, cliente_cpf: str = Query(...)):
+    return os_service.reprovar_os(os_id, cliente_cpf, db)
 
 @router.patch("/avancar/{os_id}", summary="AVANÇAR STATUS DA OS", description="Avançar os status de uma OS")
 def avancar_ordem(os_id: int, db: DB):
