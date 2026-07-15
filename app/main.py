@@ -9,7 +9,7 @@ from app.database import Base, engine
 from app.core.security import verificar_token
 from app.core.init_db import init_db
 
-from app.domain.models.cliente_model import Cliente
+from app.domain.models.Cliente_model import Cliente
 from app.domain.models.Veiculo_model import Veiculo
 from app.domain.models.Peca_model import Peca
 from app.domain.models.Servico_model import Servicos
@@ -34,6 +34,8 @@ ROTAS_PUBLICAS = [
     "/api/v1/auth/registrar",
     "/api/v1/ordem_servico/aprovar",
     "/api/v1/ordem_servico/confirmar_aprovacao",
+    "/api/v1/ordem_servico/reprovar",
+    "/api/v1/health",
     "/docs",
     "/openapi.json",
     "/static",
