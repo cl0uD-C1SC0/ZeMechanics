@@ -1,4 +1,4 @@
-from app.domain.models.cliente_model import Cliente as ClienteModel
+from app.domain.models.Cliente_model import Cliente as ClienteModel
 
 
 def add_client(cliente, db):
