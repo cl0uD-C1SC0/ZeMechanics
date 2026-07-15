@@ -1,0 +1,60 @@
+# O secret "dockerhub-credentials" referenciado abaixo NÃO fica versionado neste
+# repositório — precisa ser criado direto no cluster via:
+#   kubectl create secret docker-registry dockerhub-credentials --docker-username=... --docker-password=... -n zemechanics
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mecanica-dp
+  namespace: zemechanics
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mecanica-dp
+  template:
+    metadata:
+      labels:
+        app: mecanica-dp
+    spec:
+      imagePullSecrets:
+        - name: dockerhub-credentials
+      # A API roda Base.metadata.create_all()/init_db() na importação do módulo,
+      # antes até do FastAPI subir — se o MySQL ainda não aceitar conexões nesse
+      # instante, o container crasha. Este initContainer espera a porta 3306
+      # responder antes de deixar o container principal iniciar.
+      initContainers:
+        - name: wait-for-mysql
+          image: busybox:1.36
+          command:
+            - "sh"
+            - "-c"
+            - "until nc -z mysql 3306; do echo aguardando o mysql responder...; sleep 2; done"
+      containers:
+        - name: mecanica-container
+          image: "jayakuza/mecanica:latest"
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: mecanica-cfg
+            - secretRef:
+                name: mecanica-sec
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "300m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health/live
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health/ready
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
