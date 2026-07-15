@@ -1,6 +1,7 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
+from app.schemas.cliente_schema import ClienteSchema
 
 class OrdemDeServicoSchema(BaseModel):
     cliente_cpf: int
@@ -33,3 +34,19 @@ class OSResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class VeiculoOSCompletaSchema(BaseModel):
+    modelo: str
+    marca: str
+    placa: str
+    ano: str
+
+class PecaOSCompletaSchema(BaseModel):
+    peca_id: int
+    quantidade: int = Field(gt=0)
+
+class OSCompletaSchema(BaseModel):
+    cliente: ClienteSchema
+    veiculo: VeiculoOSCompletaSchema
+    pecas: list[PecaOSCompletaSchema] = []
+    servicos: list[int] = []
