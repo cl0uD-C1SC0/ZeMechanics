@@ -70,6 +70,15 @@ def approve_os(os, db):
     return {"message": "OS Aprovada com sucesso, agora será executada"}
 
 
+def reject_os(os, db):
+
+    os.status = StatusOS.REPROVADA
+    db.commit()
+    db.refresh(os)
+
+    return {"message": "OS Reprovada pelo cliente — Ordem de Serviço encerrada"}
+
+
 def add_os_peca(os_id, peca_id, quantidade, db):
     os_peca = OSPecaModel(ordem_id=os_id, peca_id=peca_id, quantidade=quantidade)
     db.add(os_peca)
@@ -122,6 +131,9 @@ def remove_service_os(os_id, servico_id, db):
 def validate_is_os_open(veiculo_id, db):
     return (
         db.query(OSModel)
-        .filter(OSModel.veiculo_id == veiculo_id, OSModel.status != StatusOS.ENTREGUE)
+        .filter(
+            OSModel.veiculo_id == veiculo_id,
+            OSModel.status.notin_([StatusOS.ENTREGUE, StatusOS.REPROVADA]),
+        )
         .first()
     )
