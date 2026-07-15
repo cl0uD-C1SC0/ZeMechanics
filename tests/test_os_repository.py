@@ -183,4 +183,40 @@ def test_validate_is_os_open(db):
 
     result = validate_is_os_open(99, db)
 
-    assert result is not None                                
+    assert result is not None
+
+
+def test_reject_os(db):
+    cliente = Mock(id=1)
+    veiculo = Mock(id=1)
+
+    os = create_new_os(cliente, veiculo, db)
+
+    result = reject_os(os, db)
+
+    assert os.status == StatusOS.REPROVADA
+    assert "Reprovada" in result["message"]
+
+
+def test_validate_is_os_open_ignora_reprovada(db):
+    cliente = Mock(id=1)
+    veiculo = Mock(id=98)
+
+    os = create_new_os(cliente, veiculo, db)
+    reject_os(os, db)
+
+    result = validate_is_os_open(98, db)
+
+    assert result is None
+
+
+def test_validate_is_os_open_ignora_entregue(db):
+    cliente = Mock(id=1)
+    veiculo = Mock(id=97)
+
+    os = create_new_os(cliente, veiculo, db)
+    advance_os(os, StatusOS.ENTREGUE, db)
+
+    result = validate_is_os_open(97, db)
+
+    assert result is None
