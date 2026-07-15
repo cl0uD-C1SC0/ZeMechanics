@@ -132,6 +132,16 @@ ENV/
 env.bak/
 venv.bak/
 
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+# infra/data/ NÃO deve nem existir versionado — o MySQL exige o diretório
+# de dados totalmente vazio (nem um .gitkeep) na primeira inicialização.
+# O Docker/Kind cria essa pasta sozinho ao montar o hostPath.
+infra/data/
+
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -179,3 +189,7 @@ test.py
 to-do.txt
 .sonar
 test_integration.db
+zemechanics-config
+.terraform.lock.hcl
+kubectl
+pod.log
