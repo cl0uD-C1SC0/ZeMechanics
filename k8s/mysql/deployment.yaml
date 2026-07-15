@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: zemechanics
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          # O volume é um hostPath apontando pra um diretório do Windows (NTFS),
+          # que não suporta chmod() de verdade. Sem isso, o MySQL crasha ao tentar
+          # gerar os certificados TLS/RSA automáticos na primeira inicialização
+          # (erro: "Cannot change permissions of the file 'private_key.pem.temp'").
+          args:
+            - "--auto_generate_certs=OFF"
+            - "--sha256_password_auto_generate_rsa_keys=OFF"
+            - "--caching_sha2_password_auto_generate_rsa_keys=OFF"
+            # Sem SSL/RSA (acima), o plugin padrão "caching_sha2_password" não
+            # consegue autenticar em conexões TCP normais (exige conexão segura).
+            # mysql_native_password não depende disso.
+            - "--default-authentication-plugin=mysql_native_password"
+          ports:
+            - containerPort: 3306
+          envFrom:
+            - secretRef:
+                name: mysql-secret
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: mysql-pvc
