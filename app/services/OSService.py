@@ -9,9 +9,14 @@ from app.services import veiculo_service as veiculo_service
 
 from app.repositories import PecaRepository
 from app.repositories import ServicosRepository
+from app.repositories import cliente_repository
+from app.repositories import VeiculoRepository
 
 from app.domain.enums.StatusOS import StatusOS
 from app.domain.enums.StatusOS import TRANSICAO_STATUS
+
+from app.schemas.VeiculoSchema import VeiculoSchema, UpdateVehicleSchema
+from app.schemas.cliente_schema import ClienteUpdateSchema
 
 
 def criar_nova_os(os, db):
@@ -45,6 +50,93 @@ def criar_nova_os(os, db):
 
     if nova_os:
         return {"message": f"Nova Ordem de Serviço foi criada, ID: {nova_os.id} "}
+
+
+def criar_os_completa(dados, db):
+    pecas_validadas = []
+    for item in dados.pecas:
+        peca = PecaRepository.describe_peca(item.peca_id, db)
+        if not peca:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Peça com o ID {item.peca_id} não encontrada",
+            )
+        if peca.quantidade < item.quantidade:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Estoque insuficiente para a peça '{peca.nome}' — disponível: {peca.quantidade}",
+            )
+        pecas_validadas.append((peca, item.quantidade))
+
+    servicos_validados = []
+    for servico_id in dados.servicos:
+        servico = ServicosRepository.describe_service(servico_id, db)
+        if not servico:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Serviço com o ID {servico_id} não está cadastrado no sistema",
+            )
+        servicos_validados.append(servico)
+
+    cliente_service.validar_cpf(dados.cliente.cpf)
+
+    cliente_existente = cliente_repository.get_specific_client(dados.cliente.cpf, db)
+    veiculo_existente = VeiculoRepository.get_vehicle(dados.veiculo.placa, db)
+
+    if veiculo_existente:
+        if not cliente_existente or veiculo_existente.cliente_id != cliente_existente.id:
+            raise HTTPException(
+                status_code=409,
+                detail="Este veículo já está cadastrado para outro cliente",
+            )
+
+        os_aberta = OSRepository.validate_is_os_open(veiculo_existente.id, db)
+        if os_aberta:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Já existe uma OS aberta para este veículo — OS ID {os_aberta.id}",
+            )
+
+    if cliente_existente:
+        dados_atualizacao_cliente = ClienteUpdateSchema(
+            nome=dados.cliente.nome,
+            endereco=dados.cliente.endereco,
+            telefone=dados.cliente.telefone,
+            email=dados.cliente.email,
+        )
+        cliente = cliente_repository.update_client_infos(
+            cliente_existente, dados_atualizacao_cliente, db
+        )
+    else:
+        cliente_service.cadastrar_cliente(dados.cliente, db)
+        cliente = cliente_repository.get_specific_client(dados.cliente.cpf, db)
+
+    if veiculo_existente:
+        dados_atualizacao_veiculo = UpdateVehicleSchema(
+            modelo=dados.veiculo.modelo,
+            marca=dados.veiculo.marca,
+            ano=dados.veiculo.ano,
+        )
+        veiculo = VeiculoRepository.update_vehicle_info(
+            veiculo_existente, dados_atualizacao_veiculo, db
+        )
+    else:
+        veiculo_schema = VeiculoSchema(**dados.veiculo.model_dump(), cliente_id=cliente.id)
+        veiculo_service.cadastrar_veiculo(veiculo_schema, db)
+        veiculo = VeiculoRepository.get_vehicle(dados.veiculo.placa, db)
+
+    nova_os = OSRepository.create_new_os(cliente, veiculo, db)
+
+    for peca, quantidade in pecas_validadas:
+        peca_service.remover_do_estoque(peca.id, quantidade, db)
+        OSRepository.add_os_peca(nova_os.id, peca.id, quantidade, db)
+
+    for servico in servicos_validados:
+        OSRepository.add_service_os(nova_os.id, servico.id, db)
+
+    return {
+        "message": f"Nova Ordem de Serviço Completa foi criada com sucesso, ID: {nova_os.id}"
+    }
 
 
 def listar_todas_os(db):
@@ -158,6 +250,21 @@ def aprovar_os(os_id, cliente_cpf, db):
     return OSRepository.approve_os(os, db)
 
 
+def reprovar_os(os_id, cliente_cpf, db):
+    os = OSRepository.get_specific_os(os_id, db)
+
+    if not os:
+        raise HTTPException(status_code=404, detail="OS não encontrada")
+
+    if os.status != StatusOS.AGUARDANDO_APROVACAO:
+        raise HTTPException(status_code=400, detail="OS não está aguardando aprovação")
+
+    if str(os.cliente.cpf) != cliente_cpf:
+        raise HTTPException(status_code=403, detail="CPF não autorizado")
+
+    return OSRepository.reject_os(os, db)
+
+
 def adicionar_peca_os(os_id, peca_id, quantidade, db):
     os = OSRepository.get_specific_os(os_id, db)
     if not os:
@@ -244,7 +351,7 @@ def _mostrar_aprovacao(os_id, dados_os, cliente_cpf):
     return HTMLResponse(f"""
         <html>
         <body>
-            <h2>OS #{id} — Aguardando Aprovação</h2>
+            <h2>OS #{os_id} — Aguardando Aprovação</h2>
             <p><b>Status:</b> {dados_os["status"]}</p>
             <p><b>Veículo:</b> {dados_os["veiculo_placa"]}</p>
 
@@ -264,6 +371,10 @@ def _mostrar_aprovacao(os_id, dados_os, cliente_cpf):
 
             <form method="post" action="/api/v1/ordem_servico/confirmar_aprovacao/{os_id}?cliente_cpf={cliente_cpf}">
                 <button type="submit">✅ Aprovar OS</button>
+            </form>
+
+            <form method="post" action="/api/v1/ordem_servico/reprovar/{os_id}?cliente_cpf={cliente_cpf}">
+                <button type="submit">❌ Recusar OS</button>
             </form>
         </body>
         </html>
