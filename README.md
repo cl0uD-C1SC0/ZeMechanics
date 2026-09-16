@@ -39,73 +39,111 @@ Para **análise de código** foi utilizado o SonarQube, uma das maiores ferramen
           <img src="https://skillicons.dev/icons?i=,,github,docker,python,mysql,sonarqube,">
 </p>
 
-## Como implementar - Segunda etapa do projeto
+# Como implementar - Terceira etapa do projeto
 
-Nessa etapa, a aplicação sai do `docker-compose` local e passa a rodar dentro de um cluster **Kubernetes** (via **Kind**), com toda a infraestrutura provisionada via **Terraform**.
-
-### Índice
-* ➡️ [Requisitos mínimos](#requisitos-mínimos)
-* ➡️ [Passo a passo](#passo-a-passo)
-
-### Requisitos mínimos
-* Docker (rodando e acessível a partir do WSL)
-* [Terraform CLI](https://developer.hashicorp.com/terraform/install)
-* [Kind CLI](https://kind.sigs.k8s.io/docs/user/quick-start/#installation)
-* [kubectl CLI](https://kubernetes.io/docs/tasks/tools/)
-* Uma imagem da API publicada no Docker Hub (ex: `seuusuario/mecanica:latest`)
-
-### Passo a passo
-
-#### 01 - Ambiente virtual (venv)
-> Não é obrigatório pra essa etapa (a aplicação já roda dentro do container), mas é útil caso queira rodar os testes localmente. Veja: [Como criar um Venv (Windows)](docs/como-criar-venv.md)
-
-#### 02 - Acesse o diretório do Terraform
+## 01 - Configure AWS Credentials
 ```bash
-cd infra
+aws configure
 ```
 
-#### 03 - Crie só o cluster Kind primeiro
+## 02 - Ajuste as variáveis do Terraform
+```bash
+cd terraform/
+nano main.tf
+``` 
+
+## 03 - Deploy Terraform:
 ```bash
 terraform init
-terraform apply -target=kind_cluster.this
+terraform apply --auto-approve
 ```
-> Esse primeiro apply em separado é necessário: o provider `kubectl` depende de atributos que só existem depois que o cluster já foi criado, então aplicar tudo de uma vez só na primeira execução falha.
 
-#### 04 - Crie o secret de acesso ao Docker Hub (necessário se a imagem for privada)
+## TEST COMMANDS:
+
+### 01 - Gerar Token:
 ```bash
-export KUBECONFIG=$(terraform output -raw kubeconfig_path)
+curl -X POST https://<API_GATEWAY_ID>.execute-api.us-east-1.amazonaws.com/prod/auth/login -H "Content-Type: application/json" -d "{\"cpf\": \"<CPF>\"}"
 
-kubectl create secret docker-registry dockerhub-credentials \
-  --docker-server=https://index.docker.io/v1/ \
-  --docker-username=SEU_USUARIO \
-  --docker-password='SEU_ACCESS_TOKEN' \
-  --docker-email=seu-email@exemplo.com \
-  --namespace=zemechanics
+# OBS: Substitua os campos:
+# ➡️ <API_GATEWAY_ID>: Pelo ID do AWS API Gateway criado
+# ➡️ <CPF>: Pelo CPF cadastrado nas etapas anteriores
 ```
-> Gere um Access Token (nunca use a senha da sua conta) em: Docker Hub → Account Settings → Security. Esse secret é criado direto no cluster e não fica versionado no repositório.
 
-#### 05 - Aplique o restante (namespace, mysql, maildev e api)
+### 02 - APP Test Work around
+Sempre coloque o **/prod** no inicio do PATH das rotas.
+
+> 01 - Cadastrar cliente (LINUX)
 ```bash
-terraform apply
+curl -X 'POST' \
+  'https://<API_GATEWAY_ID>.execute-api.us-east-1.amazonaws.com/prod/api/v1/cliente/novo_cliente' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "nome": "string",
+  "cpf": "string",
+  "endereco": "string",
+  "telefone": "string",
+  "email": "string"
+}'
+
+# OBS: Substitua os campos 'string' pelo seus respectivos valores
 ```
 
-#### 06 - Verifique se tudo subiu
+> 02 - Gerar JWT
+```
+curl -X POST https://<API_GATEWAY_ID>.execute-api.us-east-1.amazonaws.com/prod/auth/login -H "Content-Type: application/json" -d "{\"cpf\": \"<CPF\"}"
+```
+
+> 03 - Cria uma OS completa (sem peça/serviço)
 ```bash
-kubectl get pods -n zemechanics -w
+curl -X 'POST' \
+  'https://<API_GATEWAY_ID>.execute-api.us-east-1.amazonaws.com/prod/api/v1/ordem_servico/nova_os_completa' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer <TOKEN>' \
+  -d '{
+  "cliente": {
+    "nome": "string",
+    "cpf": "string",
+    "endereco": "string",
+    "telefone": "string",
+    "email": "string"
+  },
+  "veiculo": {
+    "modelo": "string",
+    "marca": "string",
+    "placa": "string",
+    "ano": "string"
+  },
+  "pecas": [],
+  "servicos": []
+}'
 ```
-> Espere todos os pods ficarem `Running`/`Ready`. O pod da API só fica pronto depois que o MySQL aceitar conexões — existe um `initContainer` esperando exatamente por isso.
 
-#### 07 - Acesse localmente
-* Swagger da API: http://localhost:30080/docs
-* MailDev (aprovação de OS por e-mail): http://localhost:30081
+> 04 - Avance a OS ate o status de Aguardando Aprovacao
+```bash
+curl -X 'PATCH' \
+  'https://<API_GATEWAY_ID>.execute-api.us-east-1.amazonaws.com/prod/api/v1/ordem_servico/avancar/{OS_ID}' \
+  -H 'accept: application/json' \
+  -H 'Authorization: Bearer <TOKEN>'
+```
 
-> Login na API com as mesmas credenciais didáticas da primeira etapa: usuário `admin`, senha `admin1234`.
+> 05 - Aprove a:
+```bash
+curl -X POST "https://<API_GATEWAY_ID>.execute-api.us-east-1.amazonaws.com/prod/api/v1/ordem_servico/confir
+mar_aprovacao/<OS_ID>?cliente_cpf=<CPF>"
+```
 
-> Pra derrubar tudo depois: `terraform destroy` (dentro de `infra/`).
+> 06 - Execute a etapa 04 novamente para finalizar.
 
-## Como implementar - Primeira etapa do projeto (Depreciado)
+>> OBS: Consulte o Swagger, acesse:
+```html
+https://<API_GATEWAY_ID>.execute-api.us-east-1.amazonaws.com/prod/docs
+```
 
-* [Clique aqui para ver o tutorial antigo](docs/como-implementar-primeira-etapa-projeto.md)
+# Como implementar - Segunda etapa do projeto (Depreciado)
+
+* [Clique aqui para ver o tutorial antigo](docs/como-implementar-segunda-etapa-projeto.md)
 
 ## 📫 Vamos nos conectar?
 
