@@ -9,7 +9,7 @@ from app.database import Base, engine
 # from app.core.security import verificar_token # > TRANSFERIDO PARA FUNÇÃO LAMBDA
 from app.core.init_db import init_db
 
-from app.domain.models.cliente_model import Cliente
+from app.domain.models.Cliente_model import Cliente
 from app.domain.models.Veiculo_model import Veiculo
 from app.domain.models.Peca_model import Peca
 from app.domain.models.Servico_model import Servicos
