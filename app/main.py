@@ -6,10 +6,10 @@ from fastapi.openapi.utils import get_openapi
 
 from app.api.router import router
 from app.database import Base, engine
-from app.core.security import verificar_token
+# from app.core.security import verificar_token # > TRANSFERIDO PARA FUNÇÃO LAMBDA
 from app.core.init_db import init_db
 
-from app.domain.models.Cliente_model import Cliente
+from app.domain.models.cliente_model import Cliente
 from app.domain.models.Veiculo_model import Veiculo
 from app.domain.models.Peca_model import Peca
 from app.domain.models.Servico_model import Servicos
@@ -29,64 +29,67 @@ app = FastAPI(
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
-ROTAS_PUBLICAS = [
-    "/api/v1/auth/login",
-    "/api/v1/auth/registrar",
-    "/api/v1/ordem_servico/aprovar",
-    "/api/v1/ordem_servico/confirmar_aprovacao",
-    "/api/v1/ordem_servico/reprovar",
-    "/api/v1/health",
-    "/docs",
-    "/openapi.json",
-    "/static",
-]
+# TRANSFERIDO PARA FUNÇÃO LAMBDA
+# CADASTRAR AS ROTAS PUBLICAS ABAIXO NO AWS API GATEWAY
+# ROTAS_PUBLICAS = [
+#     "/api/v1/auth/login",
+#     "/api/v1/auth/registrar",
+#     "/api/v1/ordem_servico/aprovar",
+#     "/api/v1/ordem_servico/confirmar_aprovacao",
+#     "/api/v1/ordem_servico/reprovar",
+#     "/api/v1/health",
+#     "/docs",
+#     "/openapi.json",
+#     "/static",
+# ]
 
-@app.middleware("http")
-async def jwt_middleware(request: Request, call_next):
-    for rota in ROTAS_PUBLICAS:
-        if request.url.path.startswith(rota):
-            return await call_next(request)
+# TRANSFERIDO PARA FUNÇÃO LAMBDA
+# @app.middleware("http")
+# async def jwt_middleware(request: Request, call_next):
+#     for rota in ROTAS_PUBLICAS:
+#         if request.url.path.startswith(rota):
+#             return await call_next(request)
 
-    token = request.headers.get("Authorization")
-    if not token or not token.startswith("Bearer "):
-        return JSONResponse(status_code=401, content={"detail": "Token não fornecido"})
+#     token = request.headers.get("Authorization")
+#     if not token or not token.startswith("Bearer "):
+#         return JSONResponse(status_code=401, content={"detail": "Token não fornecido"})
 
-    payload = verificar_token(token.split(" ")[1])
-    if not payload:
-        return JSONResponse(status_code=401, content={"detail": "Token inválido ou expirado"})
+#     payload = verificar_token(token.split(" ")[1])
+#     if not payload:
+#         return JSONResponse(status_code=401, content={"detail": "Token inválido ou expirado"})
 
-    return await call_next(request)
+#     return await call_next(request)
 
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger():
     return get_swagger_ui_html(
-        openapi_url="/openapi.json",
+        openapi_url="openapi.json",
         title="Ze Mechanics LTDA",
-        swagger_favicon_url="/static/images/Logo-ZeMechanicsLTDA.ico",
+        swagger_favicon_url="static/images/Logo-ZeMechanicsLTDA.ico",
         swagger_ui_parameters={
             "syntaxHighlight.theme": "agate",
             "docExpansion": "none",
             "filter": True,
-            "displayRequestDuration": True,
-            "persistAuthorization": True,
+            "displayRequestDuration": True
+            # "persistAuthorization": True,
         },
     )
 
-def custom_openapi():
-    if app.openapi_schema:
-        return app.openapi_schema
-    schema = get_openapi(title=app.title, version=app.version, routes=app.routes)
-    schema["components"]["securitySchemes"] = {
-        "BearerAuth": {
-            "type": "http",
-            "scheme": "bearer",
-            "bearerFormat": "JWT",
-        }
-    }
-    schema["security"] = [{"BearerAuth": []}]
-    app.openapi_schema = schema
-    return schema
+# def custom_openapi():
+#     if app.openapi_schema:
+#         return app.openapi_schema
+#     schema = get_openapi(title=app.title, version=app.version, routes=app.routes)
+#     schema["components"]["securitySchemes"] = {
+#         "BearerAuth": {
+#             "type": "http",
+#             "scheme": "bearer",
+#             "bearerFormat": "JWT",
+#         }
+#     }
+#     schema["security"] = [{"BearerAuth": []}]
+#     app.openapi_schema = schema
+#     return schema
 
-app.openapi = custom_openapi
+# app.openapi = custom_openapi
 
 app.include_router(router, prefix="/api/v1")
