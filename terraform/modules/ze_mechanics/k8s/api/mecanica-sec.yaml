@@ -1,0 +1,18 @@
+# Mesmas variáveis do .env local, com DATABASE_URL e MAIL_SERVER_ADDRESS
+# apontando para os Services do cluster (mysql e maildev) em vez de
+# localhost/docker-compose.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mecanica-sec
+  namespace: zemechanics
+type: Opaque
+stringData:
+  DATABASE_URL: "mysql+pymysql://admin:rootroot@terraform-20260914183438999900000008.cwd226gqk7n5.us-east-1.rds.amazonaws.com/mecanica"
+  DATABASE_USERNAME: "admin"
+  DATABASE_PASSWORD: "rootroot"
+  SECRET_KEY: "1234"
+  SECRET_KEY_JWT: "admin123"
+  USER_NAME: "admin"
+  USER_PASSWORD: "admin1234"
+  MAIL_SERVER_ADDRESS: "maildev-svc"

@@ -116,13 +116,65 @@ resource "aws_apigatewayv2_route" "protected_proxy" {
   authorizer_id      = aws_apigatewayv2_authorizer.authorizer-zemechanic-auth.id
 }
 
-############
-# TERRAFORM API GATEWAY
-###########
+##############################################
+# Rotas públicas — Ordem de Serviço          #
+##############################################
+resource "aws_apigatewayv2_route" "os_pagina_aprovacao" {
+  api_id    = aws_apigatewayv2_api.zemechanic_api.id
+  route_key = "GET /api/v1/ordem_servico/aprovar/{os_id}"
+  target    = "integrations/${aws_apigatewayv2_integration.eks_proxy.id}"
+}
 
-# 10. Route catch-all protegida
-# Method: ANY
-# Path: /{proxy+}
-# Target: Integration do passo 9
-# Authorization type: CUSTOM
-# Authorizer: o do passo 6
+resource "aws_apigatewayv2_route" "os_confirmar_aprovacao" {
+  api_id    = aws_apigatewayv2_api.zemechanic_api.id
+  route_key = "POST /api/v1/ordem_servico/confirmar_aprovacao/{os_id}"
+  target    = "integrations/${aws_apigatewayv2_integration.eks_proxy.id}"
+}
+
+resource "aws_apigatewayv2_route" "os_reprovar" {
+  api_id    = aws_apigatewayv2_api.zemechanic_api.id
+  route_key = "POST /api/v1/ordem_servico/reprovar/{os_id}"
+  target    = "integrations/${aws_apigatewayv2_integration.eks_proxy.id}"
+}
+
+##############################################
+# Rotas públicas — Health, Docs, Static      #
+##############################################
+resource "aws_apigatewayv2_route" "health_live" {
+  api_id    = aws_apigatewayv2_api.zemechanic_api.id
+  route_key = "GET /api/v1/health/live"
+  target    = "integrations/${aws_apigatewayv2_integration.eks_proxy.id}"
+}
+
+resource "aws_apigatewayv2_route" "health_ready" {
+  api_id    = aws_apigatewayv2_api.zemechanic_api.id
+  route_key = "GET /api/v1/health/ready"
+  target    = "integrations/${aws_apigatewayv2_integration.eks_proxy.id}"
+}
+
+resource "aws_apigatewayv2_route" "docs" {
+  api_id    = aws_apigatewayv2_api.zemechanic_api.id
+  route_key = "GET /docs"
+  target    = "integrations/${aws_apigatewayv2_integration.eks_proxy.id}"
+}
+
+resource "aws_apigatewayv2_route" "openapi_json" {
+  api_id    = aws_apigatewayv2_api.zemechanic_api.id
+  route_key = "GET /openapi.json"
+  target    = "integrations/${aws_apigatewayv2_integration.eks_proxy.id}"
+}
+
+resource "aws_apigatewayv2_route" "static_assets" {
+  api_id    = aws_apigatewayv2_api.zemechanic_api.id
+  route_key = "GET /static/{proxy+}"
+  target    = "integrations/${aws_apigatewayv2_integration.eks_proxy.id}"
+}
+
+##############################################
+# 13. Rota pública — Registro de cliente
+##############################################
+resource "aws_apigatewayv2_route" "auth_registrar" {
+  api_id    = aws_apigatewayv2_api.zemechanic_api.id
+  route_key = "POST /api/v1/cliente/novo_cliente"
+  target    = "integrations/${aws_apigatewayv2_integration.eks_proxy.id}"
+}

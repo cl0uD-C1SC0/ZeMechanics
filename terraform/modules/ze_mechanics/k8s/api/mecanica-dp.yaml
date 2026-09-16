@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mecanica-dp
+  namespace: zemechanics
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mecanica-dp
+  template:
+    metadata:
+      labels:
+        app: mecanica-dp
+    spec:
+      imagePullSecrets:
+        - name: ecr-registry-helper
+      containers:
+        - name: mecanica-container
+          image: 819774488037.dkr.ecr.us-east-1.amazonaws.com/zemechanics:latest
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: mecanica-cfg
+            - secretRef:
+                name: mecanica-sec
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "300m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health/live
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health/ready
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10

@@ -1,0 +1,20 @@
+# PersistentVolume é cluster-scoped: não pertence a nenhum namespace de fato
+# (o campo "namespace" abaixo, se presente, é ignorado pelo Kubernetes).
+# Quem fica no namespace "zemechanics" é a PersistentVolumeClaim que reivindica este volume.
+#
+# hostPath aponta para um caminho no NÓ do cluster. Funciona direto no Docker Desktop
+# e no Minikube. No Kind, é necessário configurar "extraMounts" no kind-config.yaml
+# apontando esse mesmo caminho, senão o diretório não existirá dentro do node.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-pv
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  hostPath:
+    path: /mnt/data/mysql

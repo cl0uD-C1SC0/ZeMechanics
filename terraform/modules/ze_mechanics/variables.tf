@@ -73,3 +73,13 @@ variable "user_password" {
 variable "mail_server_address" {
   default = "maildev-svc"
 }
+
+# GITHUB
+variable "github_username" {
+  default = "cl0uD-C1SC0"
+}
+
+variable "github_repo" {
+  type = string
+  description = "Nome do repositorio do APP Zemechanics"
+}
