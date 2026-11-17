@@ -1,0 +1,117 @@
+# Um único MySQL, um SCHEMA + USUÁRIO por serviço (igual ao docker-compose).
+# O init.sql roda só com o volume vazio. Para recriar do zero:
+#   kubectl delete -f mysql.yaml && kubectl delete pvc mysql-data -n zm
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-sec
+  namespace: zm
+type: Opaque
+stringData:
+  MYSQL_ROOT_PASSWORD: "root"
+---
+# Mesmo conteúdo do mysql-init/01-schemas.sql
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-init
+  namespace: zm
+data:
+  01-schemas.sql: |
+    CREATE DATABASE IF NOT EXISTS os_db;
+    CREATE DATABASE IF NOT EXISTS catalog_db;
+    CREATE DATABASE IF NOT EXISTS billing_db;
+
+    CREATE USER IF NOT EXISTS 'os_user'@'%'      IDENTIFIED BY 'os_pass';
+    CREATE USER IF NOT EXISTS 'catalog_user'@'%' IDENTIFIED BY 'catalog_pass';
+    CREATE USER IF NOT EXISTS 'billing_user'@'%' IDENTIFIED BY 'billing_pass';
+
+    GRANT ALL PRIVILEGES ON os_db.*      TO 'os_user'@'%';
+    GRANT ALL PRIVILEGES ON catalog_db.* TO 'catalog_user'@'%';
+    GRANT ALL PRIVILEGES ON billing_db.* TO 'billing_user'@'%';
+
+    FLUSH PRIVILEGES;
+---
+# Volume dinâmico (StorageClass "standard" do minikube)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-data
+  namespace: zm
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: zm
+  labels:
+    app: mysql
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate          # volume RWO: nunca dois pods no mesmo disco
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          ports:
+            - containerPort: 3306
+          envFrom:
+            - secretRef:
+                name: mysql-sec
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              memory: 1Gi
+          # Mesmo truque do compose: login TCP com um usuário de serviço.
+          # Só fica pronto depois que o init.sql criou os usuários; até lá o
+          # Service "mysql" não tem endpoint e os initContainers dos serviços esperam.
+          readinessProbe:
+            exec:
+              command: ["mysql", "-h", "127.0.0.1", "-ucatalog_user", "-pcatalog_pass", "-e", "SELECT 1"]
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+            initialDelaySeconds: 60
+            periodSeconds: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: mysql-data
+        - name: init
+          configMap:
+            name: mysql-init
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: zm
+spec:
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+      targetPort: 3306
